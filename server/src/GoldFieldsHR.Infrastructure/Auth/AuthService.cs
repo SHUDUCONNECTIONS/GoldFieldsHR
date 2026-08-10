@@ -89,10 +89,24 @@ public class AuthService(
     public async Task<AuthResult<AuthResponse>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
-        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+        if (user is null)
         {
             return AuthResult<AuthResponse>.Failure("Invalid email or password.");
         }
+
+        if (await userManager.IsLockedOutAsync(user))
+        {
+            return AuthResult<AuthResponse>.Failure(
+                "This account is temporarily locked after repeated failed sign-in attempts. Try again later.");
+        }
+
+        if (!await userManager.CheckPasswordAsync(user, request.Password))
+        {
+            await userManager.AccessFailedAsync(user);
+            return AuthResult<AuthResponse>.Failure("Invalid email or password.");
+        }
+
+        await userManager.ResetAccessFailedCountAsync(user);
 
         var employee = await dbContext.Employees.FirstOrDefaultAsync(e => e.UserId == user.Id, cancellationToken);
         if (employee is null)

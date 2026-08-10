@@ -27,7 +27,7 @@ jobs:
 
       - name: Test
         working-directory: server
-        run: dotnet test tests/GoldFieldsHR.Infrastructure.Tests --no-build --configuration Release --logger "console;verbosity=normal"
+        run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
 
   frontend:
     name: Frontend typecheck & build

@@ -44,6 +44,9 @@ public static class DependencyInjection
             {
                 options.Password.RequiredLength = 8;
                 options.User.RequireUniqueEmail = true;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.AllowedForNewUsers = true;
             })
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -97,6 +100,8 @@ public static class DependencyInjection
         services.AddScoped<IAttachmentService, Attachments.AttachmentService>();
         services.AddScoped<INotificationService, Notifications.NotificationService>();
         services.AddScoped<ISiteService, Sites.SiteService>();
+
+        services.AddHostedService<Auth.RefreshTokenCleanupService>();
 
         return services;
     }

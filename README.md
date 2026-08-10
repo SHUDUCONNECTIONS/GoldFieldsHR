@@ -53,20 +53,25 @@ Logging is structured via Serilog: requests and application events are written t
 
 Production hardening baked in:
 - **CORS** — only origins listed under `Cors:AllowedOrigins` in `appsettings.json` (default `http://localhost:5173`) may call the API from a browser.
-- **Rate limiting** — all `/api/auth/*` endpoints share a fixed window limit of 10 requests/minute per client; excess requests get `429 Too Many Requests`.
+- **Rate limiting** — all `/api/auth/*` endpoints are limited to 10 requests/minute, partitioned per client IP (one caller exhausting their limit doesn't affect anyone else); excess requests get `429 Too Many Requests`.
+- **Account lockout** — 5 failed login attempts locks an account for 15 minutes (`UserManager` lockout tracking), independent of and in addition to the IP-based rate limit.
 - **Global exception handling** — unhandled exceptions return a generic `ProblemDetails` 500 response (never a stack trace) and are logged via Serilog.
 - **Health check** — `GET /healthz` reports API + database connectivity as JSON, unauthenticated, for load balancers/orchestrators.
 - **HSTS** — enabled for all non-Development environments.
-- **Input validation** — FluentValidation validates auth (register/login/password reset/refresh), incident, leave, and timesheet-correction request bodies; malformed input returns `400` with per-field messages before it reaches a service.
+- **Security response headers** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` on every API response (and on the nginx-served frontend in Docker).
+- **Input validation** — FluentValidation covers every write request DTO across all modules; malformed input returns `400` with per-field messages before it reaches a service.
+- **Refresh-token cleanup** — a background service sweeps expired refresh tokens out of the database every 24 hours.
 
 ### Backend tests
 
 ```
 cd server
-dotnet test tests/GoldFieldsHR.Infrastructure.Tests
+dotnet test
 ```
 
-Unit tests exercise the Application/Infrastructure service layer against an EF Core in-memory database, covering the workflow state machines and validation rules (Policies, Incidents, Performance, PPE, Permits, Emergency, Medical, Certificates).
+Runs both backend test projects:
+- **`GoldFieldsHR.Infrastructure.Tests`** — unit tests for the Application/Infrastructure service layer against an EF Core in-memory database, covering workflow state machines and validation rules (Auth, Policies, Incidents, Performance, PPE, Permits, Emergency, Medical, Certificates, Sites, Notifications, Attachments, Timesheet, Employees).
+- **`GoldFieldsHR.Api.Tests`** — integration tests hosting the real API pipeline via `WebApplicationFactory` (EF InMemory swapped in for Postgres), covering CORS, rate limiting, the FluentValidation action filter, and the global exception handler end-to-end through actual HTTP requests — regression coverage for the middleware pipeline itself, not just the service layer.
 
 ### Frontend
 
