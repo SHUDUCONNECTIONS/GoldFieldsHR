@@ -1,5 +1,6 @@
 using GoldFieldsHR.Api.Common;
 using GoldFieldsHR.Application.Employees;
+using GoldFieldsHR.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +12,17 @@ namespace GoldFieldsHR.Api.Controllers;
 public class EmployeesController(IEmployeeDirectoryService employeeDirectoryService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPaged(
+        [FromQuery] string? search,
+        [FromQuery] EmployeeRole? role,
+        [FromQuery] bool? isActive,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken cancellationToken = default)
     {
-        var employees = await employeeDirectoryService.GetAllAsync(cancellationToken);
-        return Ok(employees);
+        var result = await employeeDirectoryService.GetPagedAsync(
+            new EmployeeDirectoryQuery(search, role, isActive, page, pageSize), cancellationToken);
+        return Ok(result);
     }
 
     [Authorize(Roles = "HR")]

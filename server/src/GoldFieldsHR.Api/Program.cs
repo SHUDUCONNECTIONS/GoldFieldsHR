@@ -1,7 +1,14 @@
+using FluentValidation;
+using GoldFieldsHR.Api.Common;
+using GoldFieldsHR.Api.HealthChecks;
+using GoldFieldsHR.Application.Auth;
 using GoldFieldsHR.Infrastructure;
 using GoldFieldsHR.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using System.Threading.RateLimiting;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -27,8 +34,37 @@ try
         .Enrich.FromLogContext());
 
     // Add services to the container.
-    builder.Services.AddControllers();
+    builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>());
+    builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequest>();
     builder.Services.AddInfrastructure(builder.Configuration);
+
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("Frontend", policy => policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+    });
+
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.AddFixedWindowLimiter("auth", limiterOptions =>
+        {
+            limiterOptions.PermitLimit = 10;
+            limiterOptions.Window = TimeSpan.FromMinutes(1);
+            limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            limiterOptions.QueueLimit = 0;
+        });
+    });
+
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+    builder.Services.AddProblemDetails();
+
+    builder.Services.AddHealthChecks()
+        .AddCheck<DatabaseHealthCheck>("database");
 
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
@@ -38,6 +74,7 @@ try
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
+    app.UseExceptionHandler();
     app.UseSerilogRequestLogging();
 
     if (app.Environment.IsDevelopment())
@@ -51,13 +88,34 @@ try
         await dbContext.Database.MigrateAsync();
         await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
     }
+    else
+    {
+        app.UseHsts();
+    }
 
     app.UseHttpsRedirection();
+
+    app.UseCors("Frontend");
+
+    app.UseRateLimiter();
 
     app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();
+
+    app.MapHealthChecks("/healthz", new HealthCheckOptions
+    {
+        ResponseWriter = async (context, report) =>
+        {
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                status = report.Status.ToString(),
+                checks = report.Entries.Select(entry => new { name = entry.Key, status = entry.Value.Status.ToString() }),
+            });
+        },
+    });
 
     app.Run();
 }

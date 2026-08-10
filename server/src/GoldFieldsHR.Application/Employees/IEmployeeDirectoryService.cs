@@ -4,7 +4,7 @@ namespace GoldFieldsHR.Application.Employees;
 
 public interface IEmployeeDirectoryService
 {
-    Task<IReadOnlyList<EmployeeSummaryDto>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<PagedResult<EmployeeSummaryDto>> GetPagedAsync(EmployeeDirectoryQuery query, CancellationToken cancellationToken = default);
 
     Task<Result<EmployeeSummaryDto>> SetActiveStatusAsync(
         Guid employeeId, Guid actingEmployeeId, SetEmployeeActiveStatusRequest request, CancellationToken cancellationToken = default);

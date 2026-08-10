@@ -14,6 +14,21 @@ export interface EmployeeSummaryDto {
   managerName: string | null;
 }
 
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface EmployeeDirectoryQuery {
+  search?: string;
+  role?: EmployeeRole;
+  isActive?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface SetEmployeeActiveStatusRequest {
   isActive: boolean;
 }

@@ -1,13 +1,15 @@
 import { apiClient } from "./client";
 import type {
+  EmployeeDirectoryQuery,
   EmployeeSummaryDto,
+  PagedResult,
   SetEmployeeActiveStatusRequest,
   SetEmployeeManagerRequest,
   SetEmployeeRoleRequest,
 } from "../types/employee";
 
-export async function getAllEmployees(): Promise<EmployeeSummaryDto[]> {
-  const { data } = await apiClient.get<EmployeeSummaryDto[]>("/employees");
+export async function getEmployees(query: EmployeeDirectoryQuery = {}): Promise<PagedResult<EmployeeSummaryDto>> {
+  const { data } = await apiClient.get<PagedResult<EmployeeSummaryDto>>("/employees", { params: query });
   return data;
 }
 

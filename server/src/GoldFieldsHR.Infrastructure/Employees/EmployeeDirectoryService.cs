@@ -9,21 +9,55 @@ namespace GoldFieldsHR.Infrastructure.Employees;
 
 public class EmployeeDirectoryService(ApplicationDbContext dbContext, UserManager<AppUser> userManager) : IEmployeeDirectoryService
 {
-    public async Task<IReadOnlyList<EmployeeSummaryDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedResult<EmployeeSummaryDto>> GetPagedAsync(EmployeeDirectoryQuery query, CancellationToken cancellationToken = default)
     {
-        var employees = await dbContext.Employees
+        var employeesQuery = dbContext.Employees
             .Include(e => e.Site)
             .Include(e => e.Manager)
-            .OrderBy(e => e.FirstName)
-            .ThenBy(e => e.LastName)
+            .AsQueryable();
+
+        if (query.Role.HasValue)
+        {
+            employeesQuery = employeesQuery.Where(e => e.Role == query.Role.Value);
+        }
+
+        if (query.IsActive.HasValue)
+        {
+            employeesQuery = employeesQuery.Where(e => e.IsActive == query.IsActive.Value);
+        }
+
+        var joined =
+            from e in employeesQuery
+            join u in dbContext.Users on e.UserId equals u.Id into userGroup
+            from u in userGroup.DefaultIfEmpty()
+            select new { Employee = e, Email = u != null ? (u.Email ?? string.Empty) : string.Empty };
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var term = query.Search.Trim().ToLower();
+            joined = joined.Where(x =>
+                x.Employee.FirstName.ToLower().Contains(term) ||
+                x.Employee.LastName.ToLower().Contains(term) ||
+                x.Employee.EmployeeNumber.ToLower().Contains(term) ||
+                x.Employee.JobTitle.ToLower().Contains(term) ||
+                x.Email.ToLower().Contains(term));
+        }
+
+        var totalCount = await joined.CountAsync(cancellationToken);
+
+        var page = Math.Max(query.Page, 1);
+        var pageSize = Math.Clamp(query.PageSize, 1, 1000);
+
+        var pageRows = await joined
+            .OrderBy(x => x.Employee.FirstName)
+            .ThenBy(x => x.Employee.LastName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var userIds = employees.Select(e => e.UserId).ToList();
-        var emailsByUserId = await dbContext.Users
-            .Where(u => userIds.Contains(u.Id))
-            .ToDictionaryAsync(u => u.Id, u => u.Email ?? string.Empty, cancellationToken);
+        var items = pageRows.Select(x => ToDto(x.Employee, x.Email)).ToList();
 
-        return employees.Select(e => ToDto(e, emailsByUserId.GetValueOrDefault(e.UserId, string.Empty))).ToList();
+        return new PagedResult<EmployeeSummaryDto>(items, totalCount, page, pageSize);
     }
 
     public async Task<Result<EmployeeSummaryDto>> SetActiveStatusAsync(

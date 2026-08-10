@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { extractErrorMessage } from "../api/client";
-import { getAllEmployees, setEmployeeActiveStatus, setEmployeeManager, setEmployeeRole } from "../api/employees";
+import { getEmployees, setEmployeeActiveStatus, setEmployeeManager, setEmployeeRole } from "../api/employees";
 import { downloadCsv } from "../lib/csv";
 import { Badge } from "./Badge";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -13,48 +13,57 @@ interface EmployeeDirectoryProps {
   canManage: boolean;
 }
 
+const PAGE_SIZE = 25;
+
 export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
   const { showSuccess, showError } = useToast();
   const [employees, setEmployees] = useState<EmployeeSummaryDto[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingManagerId, setEditingManagerId] = useState<string | null>(null);
   const [managerNumberInput, setManagerNumberInput] = useState("");
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [roleInput, setRoleInput] = useState<EmployeeRole>(EmployeeRole.Employee);
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<EmployeeRole | "all">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [confirmDeactivate, setConfirmDeactivate] = useState<EmployeeSummaryDto | null>(null);
 
-  const filteredEmployees = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    return employees.filter((e) => {
-      if (roleFilter !== "all" && e.role !== roleFilter) return false;
-      if (statusFilter === "active" && !e.isActive) return false;
-      if (statusFilter === "inactive" && e.isActive) return false;
-      if (!query) return true;
-      return (
-        e.fullName.toLowerCase().includes(query) ||
-        e.employeeNumber.toLowerCase().includes(query) ||
-        e.email.toLowerCase().includes(query) ||
-        e.jobTitle.toLowerCase().includes(query)
-      );
-    });
-  }, [employees, searchQuery, roleFilter, statusFilter]);
+  // Debounce free-text search so we don't fire a request on every keystroke.
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearchQuery(searchInput.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
+  // Any filter change resets back to page 1.
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, roleFilter, statusFilter]);
 
   const load = useCallback(async () => {
     try {
-      const data = await getAllEmployees();
-      setEmployees(data);
+      const data = await getEmployees({
+        search: searchQuery || undefined,
+        role: roleFilter === "all" ? undefined : roleFilter,
+        isActive: statusFilter === "all" ? undefined : statusFilter === "active",
+        page,
+        pageSize: PAGE_SIZE,
+      });
+      setEmployees(data.items);
+      setTotalCount(data.totalCount);
     } catch (err) {
       setError(extractErrorMessage(err));
     }
-  }, []);
+  }, [searchQuery, roleFilter, statusFilter, page]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   function handleToggleActiveClick(employee: EmployeeSummaryDto) {
     if (employee.isActive) {
@@ -109,22 +118,37 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
     setRoleInput(employee.role);
   }
 
-  function handleExportCsv() {
-    downloadCsv(
-      `employee-directory-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["Name", "Employee #", "Email", "Job title", "Role", "Site", "Manager", "Status"],
-      filteredEmployees.map((e) => [
-        e.fullName,
-        e.employeeNumber,
-        e.email,
-        e.jobTitle,
-        EmployeeRoleLabels[e.role],
-        e.siteName,
-        e.managerName ?? "",
-        e.isActive ? "Active" : "Inactive",
-      ]),
-    );
-    showSuccess(`Exported ${filteredEmployees.length} employee${filteredEmployees.length === 1 ? "" : "s"} to CSV.`);
+  async function handleExportCsv() {
+    setError(null);
+    try {
+      // Export every row matching the current filters, not just the page on screen.
+      const data = await getEmployees({
+        search: searchQuery || undefined,
+        role: roleFilter === "all" ? undefined : roleFilter,
+        isActive: statusFilter === "all" ? undefined : statusFilter === "active",
+        page: 1,
+        pageSize: Math.max(totalCount, 1),
+      });
+      downloadCsv(
+        `employee-directory-${new Date().toISOString().slice(0, 10)}.csv`,
+        ["Name", "Employee #", "Email", "Job title", "Role", "Site", "Manager", "Status"],
+        data.items.map((e) => [
+          e.fullName,
+          e.employeeNumber,
+          e.email,
+          e.jobTitle,
+          EmployeeRoleLabels[e.role],
+          e.siteName,
+          e.managerName ?? "",
+          e.isActive ? "Active" : "Inactive",
+        ]),
+      );
+      showSuccess(`Exported ${data.items.length} employee${data.items.length === 1 ? "" : "s"} to CSV.`);
+    } catch (err) {
+      const message = extractErrorMessage(err);
+      setError(message);
+      showError(message);
+    }
   }
 
   async function confirmEditRole(employeeId: string) {
@@ -152,8 +176,8 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
           <input
             type="text"
             placeholder="Search name, #, email, title..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="w-56 rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-amber-500 focus:outline-none"
           />
           <select
@@ -190,9 +214,9 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
 
       {error && <p className="px-6 pt-4 text-sm text-red-600">{error}</p>}
 
-      {filteredEmployees.length === 0 ? (
+      {employees.length === 0 ? (
         <p className="px-6 py-8 text-center text-sm text-slate-500">
-          {employees.length === 0 ? "No employees on record." : "No employees match your filters."}
+          {totalCount === 0 ? "No employees on record." : "No employees match your filters."}
         </p>
       ) : (
         <table className="w-full text-left text-sm">
@@ -210,7 +234,7 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
             </tr>
           </thead>
           <tbody>
-            {filteredEmployees.map((employee) => (
+            {employees.map((employee) => (
               <tr key={employee.id} className="border-t border-slate-100">
                 <td className="px-6 py-2 text-slate-700">{employee.fullName}</td>
                 <td className="px-6 py-2 text-slate-700">{employee.employeeNumber}</td>
@@ -320,6 +344,35 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
             ))}
           </tbody>
         </table>
+      )}
+
+      {totalCount > 0 && (
+        <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3 text-xs text-slate-500">
+          <span>
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalCount)} of {totalCount}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="rounded-md border border-slate-300 px-3 py-1 font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span>
+              Page {page} of {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="rounded-md border border-slate-300 px-3 py-1 font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
 
       {confirmDeactivate && (

@@ -49,3 +49,7 @@ jobs:
       - name: Typecheck & build
         working-directory: client
         run: npm run build
+
+      - name: Test
+        working-directory: client
+        run: npm test

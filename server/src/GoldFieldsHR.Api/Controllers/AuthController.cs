@@ -1,10 +1,12 @@
 using GoldFieldsHR.Application.Auth;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GoldFieldsHR.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("auth")]
 public class AuthController(IAuthService authService, IHostEnvironment environment) : ControllerBase
 {
     [HttpPost("register")]

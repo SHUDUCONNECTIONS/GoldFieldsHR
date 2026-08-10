@@ -51,6 +51,14 @@ API available at `http://localhost:5167` (Swagger UI at `/swagger` in Developmen
 
 Logging is structured via Serilog: requests and application events are written to the console and to rolling daily files under `server/src/GoldFieldsHR.Api/logs/` (gitignored, 14-day retention). Configure levels/sinks under the `Serilog` section in `appsettings.json`.
 
+Production hardening baked in:
+- **CORS** — only origins listed under `Cors:AllowedOrigins` in `appsettings.json` (default `http://localhost:5173`) may call the API from a browser.
+- **Rate limiting** — all `/api/auth/*` endpoints share a fixed window limit of 10 requests/minute per client; excess requests get `429 Too Many Requests`.
+- **Global exception handling** — unhandled exceptions return a generic `ProblemDetails` 500 response (never a stack trace) and are logged via Serilog.
+- **Health check** — `GET /healthz` reports API + database connectivity as JSON, unauthenticated, for load balancers/orchestrators.
+- **HSTS** — enabled for all non-Development environments.
+- **Input validation** — FluentValidation validates auth (register/login/password reset/refresh), incident, leave, and timesheet-correction request bodies; malformed input returns `400` with per-field messages before it reaches a service.
+
 ### Backend tests
 
 ```
@@ -77,7 +85,17 @@ cd client
 npm test
 ```
 
-Vitest + React Testing Library, covering pure utilities (`lib/format.ts`, `lib/csv.ts`) and interactive components (`Badge`, `ConfirmDialog`, `ToastProvider`). This is a foundational suite, not exhaustive page-level coverage — most page-level correctness in this project has instead been verified via real-browser Playwright sessions during development (see conversation history), not committed as an automated suite.
+Vitest + React Testing Library, covering pure utilities (`lib/format.ts`, `lib/csv.ts`) and interactive components (`Badge`, `ConfirmDialog`, `ToastProvider`). This is a foundational suite, not exhaustive page-level coverage.
+
+### End-to-end tests (local only)
+
+```
+cd client
+npx playwright install chromium   # first time only
+npm run test:e2e
+```
+
+Playwright specs under `client/e2e/` cover login (valid/invalid credentials, logout), the dashboard, and Employee Directory search/pagination, run against a real running backend + frontend (start both first, per above). Not wired into CI — CI would need a live Postgres, migrated/seeded API, and frontend server orchestrated together, which is a meaningfully different (and unverified, in this environment) pipeline from the plain build/test jobs that run today.
 
 ### Docker (local only)
 

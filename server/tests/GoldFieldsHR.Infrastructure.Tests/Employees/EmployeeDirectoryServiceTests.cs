@@ -92,7 +92,7 @@ public class EmployeeDirectoryServiceTests
     }
 
     [Fact]
-    public async Task GetAll_ReturnsEveryEmployee()
+    public async Task GetPaged_ReturnsEveryEmployee()
     {
         using var dbContext = TestDbContextFactory.Create();
         dbContext.AddEmployee(EmployeeRole.HR);
@@ -100,9 +100,45 @@ public class EmployeeDirectoryServiceTests
         dbContext.AddEmployee(EmployeeRole.LineManager);
         var service = new EmployeeDirectoryService(dbContext, MockUserManagerFactory.Create().Object);
 
-        var result = await service.GetAllAsync();
+        var result = await service.GetPagedAsync(new EmployeeDirectoryQuery(null, null, null));
 
-        Assert.Equal(3, result.Count);
+        Assert.Equal(3, result.Items.Count);
+        Assert.Equal(3, result.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetPaged_FiltersByRoleAndSearch()
+    {
+        using var dbContext = TestDbContextFactory.Create();
+        dbContext.AddEmployee(EmployeeRole.HR, "HR-1");
+        dbContext.AddEmployee(EmployeeRole.Employee, "EMP-1");
+        dbContext.AddEmployee(EmployeeRole.LineManager, "LM-1");
+        var service = new EmployeeDirectoryService(dbContext, MockUserManagerFactory.Create().Object);
+
+        var roleFiltered = await service.GetPagedAsync(new EmployeeDirectoryQuery(null, EmployeeRole.HR, null));
+        Assert.Equal(1, roleFiltered.TotalCount);
+        Assert.Equal(EmployeeRole.HR, roleFiltered.Items[0].Role);
+
+        var searchFiltered = await service.GetPagedAsync(new EmployeeDirectoryQuery("LM-1", null, null));
+        Assert.Equal(1, searchFiltered.TotalCount);
+        Assert.Equal("LM-1", searchFiltered.Items[0].EmployeeNumber);
+    }
+
+    [Fact]
+    public async Task GetPaged_RespectsPageSize()
+    {
+        using var dbContext = TestDbContextFactory.Create();
+        dbContext.AddEmployee(EmployeeRole.HR);
+        dbContext.AddEmployee(EmployeeRole.Employee);
+        dbContext.AddEmployee(EmployeeRole.LineManager);
+        var service = new EmployeeDirectoryService(dbContext, MockUserManagerFactory.Create().Object);
+
+        var result = await service.GetPagedAsync(new EmployeeDirectoryQuery(null, null, null, Page: 1, PageSize: 2));
+
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal(3, result.TotalCount);
+        Assert.Equal(1, result.Page);
+        Assert.Equal(2, result.PageSize);
     }
 
     [Fact]

@@ -15,6 +15,13 @@ public record EmployeeSummaryDto(
     Guid? ManagerId,
     string? ManagerName);
 
+public record EmployeeDirectoryQuery(
+    string? Search,
+    EmployeeRole? Role,
+    bool? IsActive,
+    int Page = 1,
+    int PageSize = 25);
+
 public record SetEmployeeActiveStatusRequest(bool IsActive);
 
 public record SetEmployeeManagerRequest(string? ManagerEmployeeNumber);
