@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        working-directory: server
+        run: dotnet restore
+
+      - name: Build
+        working-directory: server
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        working-directory: server
+        run: dotnet test tests/GoldFieldsHR.Infrastructure.Tests --no-build --configuration Release --logger "console;verbosity=normal"
+
+  frontend:
+    name: Frontend typecheck & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Typecheck & build
+        working-directory: client
+        run: npm run build

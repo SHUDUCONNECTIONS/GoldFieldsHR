@@ -1,0 +1,22 @@
+using GoldFieldsHR.Domain.Enums;
+
+namespace GoldFieldsHR.Application.Employees;
+
+public record EmployeeSummaryDto(
+    Guid Id,
+    string EmployeeNumber,
+    string FullName,
+    string Email,
+    string JobTitle,
+    EmployeeRole Role,
+    string SiteName,
+    bool IsActive,
+    DateTime CreatedAtUtc,
+    Guid? ManagerId,
+    string? ManagerName);
+
+public record SetEmployeeActiveStatusRequest(bool IsActive);
+
+public record SetEmployeeManagerRequest(string? ManagerEmployeeNumber);
+
+public record SetEmployeeRoleRequest(EmployeeRole Role);

@@ -1,0 +1,122 @@
+import { useState, type FormEvent } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Pickaxe } from "lucide-react";
+import { resetPassword } from "../api/auth";
+import { extractErrorMessage } from "../api/client";
+
+export function ResetPasswordPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
+  const [token, setToken] = useState(searchParams.get("token") ?? "");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+
+    if (newPassword !== confirmPassword) {
+      setError("New password and confirmation do not match.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await resetPassword(email, token, newPassword);
+      setSuccess(true);
+      setTimeout(() => navigate("/login", { replace: true }), 2000);
+    } catch (err) {
+      setError(extractErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+      <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-xl">
+        <div className="mb-6 flex items-center gap-2">
+          <Pickaxe className="h-6 w-6 text-amber-500" />
+          <div className="leading-tight">
+            <p className="font-semibold text-slate-900">GoldFields HR</p>
+            <p className="text-xs text-slate-500">Workforce. Safety. Performance.</p>
+          </div>
+        </div>
+
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Reset password</h2>
+
+        {success ? (
+          <p className="text-sm text-emerald-600">Password reset. Redirecting to sign in...</p>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <label className="flex flex-col gap-1 text-sm text-slate-700">
+              Email
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-sm text-slate-700">
+              Reset token
+              <textarea
+                required
+                rows={3}
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                className="rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-amber-500 focus:outline-none"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-sm text-slate-700">
+              New password
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-sm text-slate-700">
+              Confirm new password
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              />
+            </label>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="mt-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            >
+              {isSubmitting ? "Resetting..." : "Reset password"}
+            </button>
+          </form>
+        )}
+
+        <p className="mt-4 text-center text-sm text-slate-500">
+          <Link to="/login" className="font-medium text-amber-600 hover:underline">
+            Back to sign in
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}

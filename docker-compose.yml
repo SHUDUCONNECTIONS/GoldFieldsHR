@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: goldfields_hr
+      POSTGRES_USER: goldfields_app
+      POSTGRES_PASSWORD: goldfields_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U goldfields_app -d goldfields_hr"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./server
+      dockerfile: src/GoldFieldsHR.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=goldfields_hr;Username=goldfields_app;Password=goldfields_dev_password"
+      Jwt__Key: "docker-local-dev-signing-key-please-change-before-any-real-deployment"
+      Jwt__Issuer: GoldFieldsHR
+      Jwt__Audience: GoldFieldsHR.Client
+      Jwt__ExpiryMinutes: "60"
+    ports:
+      - "5167:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

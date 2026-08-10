@@ -1,0 +1,6 @@
+@GoldFieldsHR.Api_HostAddress = http://localhost:5167
+
+GET {{GoldFieldsHR.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

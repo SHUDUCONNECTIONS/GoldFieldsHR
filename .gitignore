@@ -1,0 +1,25 @@
+# .NET
+server/**/bin/
+server/**/obj/
+server/**/App_Data/
+server/**/logs/
+*.user
+.vs/
+
+# Secrets (kept out of source control; use `dotnet user-secrets`)
+appsettings.Development.json
+appsettings.Local.json
+
+# Node / React
+client/node_modules/
+client/dist/
+client/.vite/
+npm-debug.log*
+
+# Editor
+.idea/
+.claude/
+
+# OS
+Thumbs.db
+.DS_Store
