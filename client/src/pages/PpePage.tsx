@@ -111,7 +111,7 @@ export function PpePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger-children flex flex-col gap-6">
       {isSafetyOfficer && (
         <>
           <PpeApprovalQueue

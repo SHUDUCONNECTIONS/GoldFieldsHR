@@ -18,10 +18,11 @@ public class EmployeesController(IEmployeeDirectoryService employeeDirectoryServ
         [FromQuery] bool? isActive,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
+        [FromQuery] bool? hasRequestedRole = null,
         CancellationToken cancellationToken = default)
     {
         var result = await employeeDirectoryService.GetPagedAsync(
-            new EmployeeDirectoryQuery(search, role, isActive, page, pageSize), cancellationToken);
+            new EmployeeDirectoryQuery(search, role, isActive, page, pageSize, hasRequestedRole), cancellationToken);
         return Ok(result);
     }
 
@@ -46,6 +47,14 @@ public class EmployeesController(IEmployeeDirectoryService employeeDirectoryServ
     public async Task<IActionResult> SetRole(Guid id, SetEmployeeRoleRequest request, CancellationToken cancellationToken)
     {
         var result = await employeeDirectoryService.SetRoleAsync(id, User.GetEmployeeId(), request, cancellationToken);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    [Authorize(Roles = "HR")]
+    [HttpPatch("{id:guid}/requested-role/dismiss")]
+    public async Task<IActionResult> DismissRequestedRole(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await employeeDirectoryService.DismissRequestedRoleAsync(id, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 }

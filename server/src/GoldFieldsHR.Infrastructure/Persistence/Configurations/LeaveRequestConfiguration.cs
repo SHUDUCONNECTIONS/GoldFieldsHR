@@ -16,6 +16,10 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
             .IsRequired()
             .HasMaxLength(500);
 
+        builder.Property(r => r.ContactNumber)
+            .IsRequired()
+            .HasMaxLength(30);
+
         builder.Property(r => r.RejectionReason)
             .HasMaxLength(500);
 

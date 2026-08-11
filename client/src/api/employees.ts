@@ -33,3 +33,8 @@ export async function setEmployeeRole(id: string, request: SetEmployeeRoleReques
   const { data } = await apiClient.patch<EmployeeSummaryDto>(`/employees/${id}/role`, request);
   return data;
 }
+
+export async function dismissRequestedRole(id: string): Promise<EmployeeSummaryDto> {
+  const { data } = await apiClient.patch<EmployeeSummaryDto>(`/employees/${id}/requested-role/dismiss`);
+  return data;
+}

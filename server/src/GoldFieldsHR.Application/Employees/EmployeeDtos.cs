@@ -9,6 +9,7 @@ public record EmployeeSummaryDto(
     string Email,
     string JobTitle,
     EmployeeRole Role,
+    EmployeeRole? RequestedRole,
     string SiteName,
     bool IsActive,
     DateTime CreatedAtUtc,
@@ -20,7 +21,8 @@ public record EmployeeDirectoryQuery(
     EmployeeRole? Role,
     bool? IsActive,
     int Page = 1,
-    int PageSize = 25);
+    int PageSize = 25,
+    bool? HasRequestedRole = null);
 
 public record SetEmployeeActiveStatusRequest(bool IsActive);
 

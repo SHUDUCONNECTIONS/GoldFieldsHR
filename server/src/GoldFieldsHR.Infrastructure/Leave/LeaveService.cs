@@ -32,6 +32,7 @@ public class LeaveService(ApplicationDbContext dbContext, INotificationService n
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             Reason = request.Reason,
+            ContactNumber = request.ContactNumber,
         };
 
         dbContext.LeaveRequests.Add(entity);
@@ -112,6 +113,7 @@ public class LeaveService(ApplicationDbContext dbContext, INotificationService n
         entity.EndDate,
         entity.EndDate.DayNumber - entity.StartDate.DayNumber + 1,
         entity.Reason,
+        entity.ContactNumber,
         entity.Status,
         entity.CreatedAtUtc,
         entity.ReviewedAtUtc,

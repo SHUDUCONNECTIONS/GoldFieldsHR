@@ -8,6 +8,7 @@ public class SubmitLeaveRequestValidator : AbstractValidator<SubmitLeaveRequest>
     {
         RuleFor(x => x.LeaveType).IsInEnum();
         RuleFor(x => x.Reason).NotEmpty().MaximumLength(1000);
+        RuleFor(x => x.ContactNumber).NotEmpty().MaximumLength(30);
         RuleFor(x => x.EndDate)
             .GreaterThanOrEqualTo(x => x.StartDate)
             .WithMessage("End date must be on or after the start date.");

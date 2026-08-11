@@ -7,17 +7,25 @@ import {
   reviewLeaveRequest,
   submitLeaveRequest,
 } from "../api/leave";
+import { AttachmentsPanel } from "../components/AttachmentsPanel";
 import { LeaveApprovalQueue } from "../components/LeaveApprovalQueue";
 import { LeaveStatusBadge } from "../components/LeaveStatusBadge";
 import { formatDate, formatDateTime } from "../lib/format";
+import { AttachmentEntityType } from "../types/attachment";
 import { EmployeeRole } from "../types/auth";
-import { LeaveType, LeaveTypeLabels, type LeaveRequestDto } from "../types/leave";
+import {
+  LEAVE_TYPES_REQUIRING_CERTIFICATE,
+  LeaveType,
+  LeaveTypeLabels,
+  type LeaveRequestDto,
+} from "../types/leave";
 
 interface LeaveRequestForm {
   leaveType: LeaveType;
   startDate: string;
   endDate: string;
   reason: string;
+  contactNumber: string;
 }
 
 const initialForm: LeaveRequestForm = {
@@ -25,6 +33,7 @@ const initialForm: LeaveRequestForm = {
   startDate: "",
   endDate: "",
   reason: "",
+  contactNumber: "",
 };
 
 export function LeavePage() {
@@ -92,7 +101,7 @@ export function LeavePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger-children flex flex-col gap-6">
       {isLineManager && (
         <LeaveApprovalQueue
           items={pendingQueue}
@@ -118,6 +127,11 @@ export function LeavePage() {
                 </option>
               ))}
             </select>
+            {LEAVE_TYPES_REQUIRING_CERTIFICATE.includes(form.leaveType) && (
+              <span className="text-xs text-amber-600">
+                Attach a medical certificate below after submitting.
+              </span>
+            )}
           </label>
 
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -152,6 +166,23 @@ export function LeavePage() {
             />
           </label>
 
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Contact number during leave
+            <input
+              type="tel"
+              required
+              value={form.contactNumber}
+              onChange={(e) => setForm((prev) => ({ ...prev, contactNumber: e.target.value }))}
+              placeholder="e.g. 082 000 0000"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+            />
+          </label>
+
+          <p className="text-xs text-slate-500 sm:col-span-2">
+            You must seek approval for leave, other than sick leave, at least 2 days prior to your day of leave. On
+            the first day of sick leave, inform your Manager/Supervisor before 6AM that you are sick.
+          </p>
+
           {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
 
           <button
@@ -171,34 +202,32 @@ export function LeavePage() {
         {myRequests.length === 0 ? (
           <p className="px-6 py-8 text-center text-sm text-slate-500">No leave requests yet.</p>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="text-xs uppercase tracking-wide text-slate-500">
-                <th className="px-6 py-2 font-medium">Type</th>
-                <th className="px-6 py-2 font-medium">Dates</th>
-                <th className="px-6 py-2 font-medium">Days</th>
-                <th className="px-6 py-2 font-medium">Status</th>
-                <th className="px-6 py-2 font-medium">Submitted</th>
-                <th className="px-6 py-2 font-medium">Rejection reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              {myRequests.map((request) => (
-                <tr key={request.id} className="border-t border-slate-100">
-                  <td className="px-6 py-2 text-slate-700">{LeaveTypeLabels[request.leaveType]}</td>
-                  <td className="px-6 py-2 text-slate-700">
-                    {formatDate(request.startDate)} – {formatDate(request.endDate)}
-                  </td>
-                  <td className="px-6 py-2 text-slate-700">{request.daysRequested}</td>
-                  <td className="px-6 py-2">
-                    <LeaveStatusBadge status={request.status} />
-                  </td>
-                  <td className="px-6 py-2 text-slate-700">{formatDateTime(request.createdAtUtc)}</td>
-                  <td className="px-6 py-2 text-slate-500">{request.rejectionReason ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ul className="divide-y divide-slate-100">
+            {myRequests.map((request) => (
+              <li key={request.id} className="px-6 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                      {LeaveTypeLabels[request.leaveType]}
+                      <LeaveStatusBadge status={request.status} />
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      {formatDate(request.startDate)} – {formatDate(request.endDate)} ({request.daysRequested}{" "}
+                      {request.daysRequested === 1 ? "day" : "days"})
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Contact during leave: {request.contactNumber} · Submitted {formatDateTime(request.createdAtUtc)}
+                    </p>
+                    {request.rejectionReason && (
+                      <p className="mt-1 text-xs text-red-600">Rejection reason: {request.rejectionReason}</p>
+                    )}
+                  </div>
+                </div>
+
+                <AttachmentsPanel entityType={AttachmentEntityType.LeaveRequest} entityId={request.id} canUpload />
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>

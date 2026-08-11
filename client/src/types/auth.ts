@@ -41,6 +41,7 @@ export interface RegisterRequest {
   role: EmployeeRole;
   siteId: string;
   managerEmployeeNumber?: string;
+  requestedRole?: EmployeeRole;
 }
 
 export interface AuthResponse {

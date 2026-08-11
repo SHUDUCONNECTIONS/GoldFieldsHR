@@ -126,7 +126,7 @@ export function WorkShiftPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger-children flex flex-col gap-6">
       {isLineManager && (
         <ShiftApprovalQueue
           title="Pending my approval (Line Manager)"

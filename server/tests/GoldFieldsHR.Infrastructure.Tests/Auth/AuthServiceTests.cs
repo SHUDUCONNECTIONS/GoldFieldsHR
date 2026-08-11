@@ -1,4 +1,5 @@
 using GoldFieldsHR.Application.Auth;
+using GoldFieldsHR.Application.Notifications;
 using GoldFieldsHR.Domain.Enums;
 using GoldFieldsHR.Infrastructure.Auth;
 using GoldFieldsHR.Infrastructure.Identity;
@@ -19,6 +20,8 @@ public class AuthServiceTests
         ExpiryMinutes = 60,
     }));
 
+    private static INotificationService CreateNotificationService() => Mock.Of<INotificationService>();
+
     [Fact]
     public async Task Login_LockedOutAccount_FailsWithoutCheckingPassword()
     {
@@ -30,7 +33,7 @@ public class AuthServiceTests
         userManager.Setup(m => m.FindByEmailAsync(user.Email)).ReturnsAsync(user);
         userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(true);
 
-        var service = new AuthService(userManager.Object, dbContext, CreateTokenGenerator());
+        var service = new AuthService(userManager.Object, dbContext, CreateTokenGenerator(), CreateNotificationService());
 
         var result = await service.LoginAsync(new LoginRequest(user.Email, "whatever"));
 
@@ -52,7 +55,7 @@ public class AuthServiceTests
         userManager.Setup(m => m.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
         userManager.Setup(m => m.AccessFailedAsync(user)).ReturnsAsync(IdentityResult.Success);
 
-        var service = new AuthService(userManager.Object, dbContext, CreateTokenGenerator());
+        var service = new AuthService(userManager.Object, dbContext, CreateTokenGenerator(), CreateNotificationService());
 
         var result = await service.LoginAsync(new LoginRequest(user.Email, "wrong-password"));
 
@@ -73,7 +76,7 @@ public class AuthServiceTests
         userManager.Setup(m => m.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
         userManager.Setup(m => m.ResetAccessFailedCountAsync(user)).ReturnsAsync(IdentityResult.Success);
 
-        var service = new AuthService(userManager.Object, dbContext, CreateTokenGenerator());
+        var service = new AuthService(userManager.Object, dbContext, CreateTokenGenerator(), CreateNotificationService());
 
         var result = await service.LoginAsync(new LoginRequest(user.Email, "correct-password"));
 
@@ -88,7 +91,7 @@ public class AuthServiceTests
         var userManager = MockUserManagerFactory.Create();
         userManager.Setup(m => m.FindByEmailAsync("nobody@example.com")).ReturnsAsync((AppUser?)null);
 
-        var service = new AuthService(userManager.Object, dbContext, CreateTokenGenerator());
+        var service = new AuthService(userManager.Object, dbContext, CreateTokenGenerator(), CreateNotificationService());
 
         var result = await service.LoginAsync(new LoginRequest("nobody@example.com", "whatever"));
 

@@ -14,4 +14,7 @@ public interface IEmployeeDirectoryService
 
     Task<Result<EmployeeSummaryDto>> SetRoleAsync(
         Guid employeeId, Guid actingEmployeeId, SetEmployeeRoleRequest request, CancellationToken cancellationToken = default);
+
+    Task<Result<EmployeeSummaryDto>> DismissRequestedRoleAsync(
+        Guid employeeId, CancellationToken cancellationToken = default);
 }

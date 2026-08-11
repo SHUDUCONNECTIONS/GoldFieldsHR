@@ -21,9 +21,9 @@ public class LeaveServiceTests
 
         var service = new LeaveService(dbContext, new NotificationService(dbContext));
         await service.SubmitAsync(unrelatedEmployee.Id, new SubmitLeaveRequest(
-            LeaveType.Annual, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 3), "Trip"));
+            LeaveType.Annual, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 3), "Trip", "0820000000"));
         await service.SubmitAsync(directReport.Id, new SubmitLeaveRequest(
-            LeaveType.Sick, new DateOnly(2026, 9, 5), new DateOnly(2026, 9, 5), "Not well"));
+            LeaveType.Sick, new DateOnly(2026, 9, 5), new DateOnly(2026, 9, 5), "Not well", "0820000001"));
 
         var pending = await service.GetPendingApprovalsAsync(manager.Id);
 
@@ -42,7 +42,7 @@ public class LeaveServiceTests
         var service = new LeaveService(dbContext, new NotificationService(dbContext));
 
         await service.SubmitAsync(unrelatedEmployee.Id, new SubmitLeaveRequest(
-            LeaveType.Annual, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 3), "Trip"));
+            LeaveType.Annual, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 3), "Trip", "0820000000"));
 
         var pending = await service.GetPendingApprovalsAsync(manager.Id);
 
@@ -60,7 +60,7 @@ public class LeaveServiceTests
         var service = new LeaveService(dbContext, notificationService);
 
         var submitted = await service.SubmitAsync(employee.Id, new SubmitLeaveRequest(
-            LeaveType.Annual, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 3), "Trip"));
+            LeaveType.Annual, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 3), "Trip", "0820000000"));
         await service.ReviewAsync(submitted.Value!.Id, manager.Id, new ReviewLeaveRequest(true, null));
 
         var notifications = await notificationService.GetMineAsync(employee.Id);

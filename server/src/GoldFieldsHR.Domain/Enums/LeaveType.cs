@@ -6,4 +6,6 @@ public enum LeaveType
     Sick = 1,
     FamilyResponsibility = 2,
     Unpaid = 3,
+    InjuryOnDuty = 4,
+    Maternity = 5,
 }

@@ -11,7 +11,8 @@ public record RegisterRequest(
     string JobTitle,
     EmployeeRole Role,
     Guid SiteId,
-    string? ManagerEmployeeNumber = null);
+    string? ManagerEmployeeNumber = null,
+    EmployeeRole? RequestedRole = null);
 
 public record LoginRequest(string Email, string Password);
 

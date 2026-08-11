@@ -7,6 +7,7 @@ export interface EmployeeSummaryDto {
   email: string;
   jobTitle: string;
   role: EmployeeRole;
+  requestedRole: EmployeeRole | null;
   siteName: string;
   isActive: boolean;
   createdAtUtc: string;
@@ -27,6 +28,7 @@ export interface EmployeeDirectoryQuery {
   isActive?: boolean;
   page?: number;
   pageSize?: number;
+  hasRequestedRole?: boolean;
 }
 
 export interface SetEmployeeActiveStatusRequest {

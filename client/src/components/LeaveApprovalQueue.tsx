@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { AttachmentsPanel } from "./AttachmentsPanel";
 import { formatDate } from "../lib/format";
+import { AttachmentEntityType } from "../types/attachment";
 import { LeaveTypeLabels, type LeaveRequestDto } from "../types/leave";
 
 interface LeaveApprovalQueueProps {
@@ -51,6 +53,7 @@ export function LeaveApprovalQueue({ items, isBusy, onApprove, onReject }: Leave
                     {item.daysRequested === 1 ? "day" : "days"})
                   </p>
                   <p className="mt-1 text-xs text-slate-500">Reason: {item.reason}</p>
+                  <p className="text-xs text-slate-500">Contact during leave: {item.contactNumber}</p>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -71,6 +74,13 @@ export function LeaveApprovalQueue({ items, isBusy, onApprove, onReject }: Leave
                   </button>
                 </div>
               </div>
+
+              <AttachmentsPanel
+                entityType={AttachmentEntityType.LeaveRequest}
+                entityId={item.id}
+                canUpload={false}
+                compact
+              />
 
               {rejectingId === item.id && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">

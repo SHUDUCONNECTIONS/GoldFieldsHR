@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Pickaxe } from "lucide-react";
 import { getSites, register } from "../api/auth";
 import { extractErrorMessage } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { EmployeeRole, type Site } from "../types/auth";
+import { EmployeeRole, EmployeeRoleLabels, type Site } from "../types/auth";
+import ramsLogo from "../assets/rams-logo.png";
 
 const initialForm = {
   firstName: "",
@@ -16,6 +16,7 @@ const initialForm = {
   role: EmployeeRole.Employee,
   siteId: "",
   managerEmployeeNumber: "",
+  requestedRole: EmployeeRole.Employee as EmployeeRole,
 };
 
 export function RegisterPage() {
@@ -46,7 +47,11 @@ export function RegisterPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      const auth = await register({ ...form, managerEmployeeNumber: form.managerEmployeeNumber || undefined });
+      const auth = await register({
+        ...form,
+        managerEmployeeNumber: form.managerEmployeeNumber || undefined,
+        requestedRole: form.requestedRole === EmployeeRole.Employee ? undefined : form.requestedRole,
+      });
       signIn(auth);
       navigate("/", { replace: true });
     } catch (err) {
@@ -57,14 +62,12 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-10">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-xl">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-10">
+      <div className="gradient-glow" />
+      <div className="fade-in-up relative z-10 w-full max-w-md rounded-lg bg-white p-8 shadow-xl">
         <div className="mb-6 flex items-center gap-2">
-          <Pickaxe className="h-6 w-6 text-amber-500" />
-          <div className="leading-tight">
-            <p className="font-semibold text-slate-900">GoldFields HR</p>
-            <p className="text-xs text-slate-500">Workforce. Safety. Performance.</p>
-          </div>
+          <img src={ramsLogo} alt="Rams Mining Technologies" className="h-9 w-auto" />
+          <p className="text-xs text-slate-500">Engineering the Future of Mining.</p>
         </div>
 
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Create account</h2>
@@ -161,8 +164,24 @@ export function RegisterPage() {
             />
           </label>
 
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Desired role (optional)
+            <select
+              value={form.requestedRole}
+              onChange={(e) => updateField("requestedRole", Number(e.target.value) as EmployeeRole)}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+            >
+              {Object.entries(EmployeeRoleLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <p className="text-xs text-slate-500">
-            New accounts are created with the Employee role. Ask HR to assign a different role afterward.
+            New accounts always start with the Employee role. If you select a different role above, it's recorded as
+            a request for HR to review and grant &mdash; it isn't applied automatically.
           </p>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { extractErrorMessage } from "../api/client";
-import { getEmployees, setEmployeeActiveStatus, setEmployeeManager, setEmployeeRole } from "../api/employees";
+import {
+  dismissRequestedRole,
+  getEmployees,
+  setEmployeeActiveStatus,
+  setEmployeeManager,
+  setEmployeeRole,
+} from "../api/employees";
 import { downloadCsv } from "../lib/csv";
 import { Badge } from "./Badge";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { RoleRequestQueue } from "./RoleRequestQueue";
 import { useToast } from "./ToastProvider";
 import { EmployeeRole, EmployeeRoleLabels } from "../types/auth";
 import type { EmployeeSummaryDto } from "../types/employee";
@@ -31,6 +38,7 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
   const [roleFilter, setRoleFilter] = useState<EmployeeRole | "all">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [confirmDeactivate, setConfirmDeactivate] = useState<EmployeeSummaryDto | null>(null);
+  const [pendingRequests, setPendingRequests] = useState<EmployeeSummaryDto[]>([]);
 
   // Debounce free-text search so we don't fire a request on every keystroke.
   useEffect(() => {
@@ -62,6 +70,20 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadPendingRequests = useCallback(async () => {
+    if (!canManage) return;
+    try {
+      const data = await getEmployees({ hasRequestedRole: true, pageSize: 100 });
+      setPendingRequests(data.items);
+    } catch (err) {
+      setError(extractErrorMessage(err));
+    }
+  }, [canManage]);
+
+  useEffect(() => {
+    loadPendingRequests();
+  }, [loadPendingRequests]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -168,8 +190,51 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
     }
   }
 
+  async function handleGrantRequestedRole(employee: EmployeeSummaryDto) {
+    if (employee.requestedRole === null) return;
+    setBusyId(employee.id);
+    setError(null);
+    try {
+      await setEmployeeRole(employee.id, { role: employee.requestedRole });
+      showSuccess(`${employee.fullName} was granted the ${EmployeeRoleLabels[employee.requestedRole]} role.`);
+      await Promise.all([load(), loadPendingRequests()]);
+    } catch (err) {
+      const message = extractErrorMessage(err);
+      setError(message);
+      showError(message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDismissRequestedRole(employee: EmployeeSummaryDto) {
+    setBusyId(employee.id);
+    setError(null);
+    try {
+      await dismissRequestedRole(employee.id);
+      showSuccess(`Dismissed ${employee.fullName}'s role request.`);
+      await Promise.all([load(), loadPendingRequests()]);
+    } catch (err) {
+      const message = extractErrorMessage(err);
+      setError(message);
+      showError(message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="flex flex-col gap-6">
+      {canManage && (
+        <RoleRequestQueue
+          items={pendingRequests}
+          isBusy={busyId !== null}
+          onGrant={handleGrantRequestedRole}
+          onDismiss={handleDismissRequestedRole}
+        />
+      )}
+
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-6 py-4">
         <h3 className="text-sm font-semibold text-slate-900">Employee directory</h3>
         <div className="flex flex-wrap items-center gap-2">
@@ -385,6 +450,7 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
           onCancel={() => setConfirmDeactivate(null)}
         />
       )}
+      </div>
     </div>
   );
 }

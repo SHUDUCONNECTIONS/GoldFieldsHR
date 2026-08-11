@@ -2,12 +2,19 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, CalendarOff, GraduationCap, HeartPulse, TrendingUp, Users } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { getDashboardSummary } from "../api/dashboard";
+import { getMyNotifications } from "../api/notifications";
 import { extractErrorMessage } from "../api/client";
 import { StatCard } from "../components/StatCard";
 import { ProgressRing } from "../components/ProgressRing";
 import { ModuleLaunchGrid } from "../components/ModuleLaunchGrid";
+import { Card } from "../components/Card";
+import { StatusBadge } from "../components/StatusBadge";
+import { formatDate, formatDateTime } from "../lib/format";
+import { useCountUp } from "../lib/useCountUp";
 import { EmployeeRole } from "../types/auth";
+import { ShiftTypeLabels } from "../types/workShift";
 import type { DashboardSummary } from "../types/dashboard";
+import type { NotificationDto } from "../types/notification";
 
 function formatPercent(value: number | null): string {
   return value === null ? "—" : `${value}%`;
@@ -19,27 +26,43 @@ export function DashboardPage() {
   const isLineManager = session?.role === EmployeeRole.LineManager;
 
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [activity, setActivity] = useState<NotificationDto[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getDashboardSummary()
       .then(setSummary)
       .catch((err) => setError(extractErrorMessage(err)));
+    getMyNotifications()
+      .then((data) => setActivity(data.slice(0, 6)))
+      .catch(() => {
+        // Non-fatal — the activity feed just stays empty.
+      });
   }, []);
 
   const loadingDetail = error ?? "Loading...";
 
+  const attendancePercent = useCountUp(summary ? summary.attendance.percentPresent : null, 1);
+  const incidentsCount = useCountUp(summary ? summary.incidentsThisMonth : null);
+  const medicalPercent = useCountUp(summary?.medicalCompliancePercent ?? null, 1);
+  const trainingPercent = useCountUp(summary?.trainingCompliancePercent ?? null, 1);
+  const pendingLeave = useCountUp(summary ? summary.pendingLeaveCount : null);
+  const performanceScore = useCountUp(summary?.myAveragePerformanceScore ?? null, 1);
+
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-xl font-semibold text-slate-900">Welcome back, {firstName}</h2>
-        <p className="text-sm text-slate-500">Here's what's happening today.</p>
+    <div className="stagger-children flex flex-col gap-6">
+      <div className="relative overflow-hidden rounded-lg">
+        <div className="gradient-glow" />
+        <div className="relative z-10">
+          <h2 className="text-xl font-semibold text-slate-900">Welcome back, {firstName}</h2>
+          <p className="text-sm text-slate-500">Here's what's happening today.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           label="Attendance Today"
-          value={summary ? `${summary.attendance.percentPresent}%` : "—"}
+          value={attendancePercent !== null ? `${attendancePercent}%` : "—"}
           detail={
             summary
               ? `${summary.attendance.presentCount} / ${summary.attendance.activeEmployeeCount} clocked in at your site`
@@ -51,7 +74,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="Incidents (MTD)"
-          value={summary ? String(summary.incidentsThisMonth) : "—"}
+          value={incidentsCount !== null ? String(incidentsCount) : "—"}
           detail={summary ? "Reported this month, org-wide" : loadingDetail}
           icon={AlertTriangle}
           iconTone={summary && summary.incidentsThisMonth > 0 ? "red" : "emerald"}
@@ -59,7 +82,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="Medical Compliance"
-          value={formatPercent(summary?.medicalCompliancePercent ?? null)}
+          value={formatPercent(medicalPercent)}
           detail={summary ? "Employees with a current fit status" : loadingDetail}
           icon={HeartPulse}
           iconTone="violet"
@@ -69,7 +92,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="Training Compliance"
-          value={formatPercent(summary?.trainingCompliancePercent ?? null)}
+          value={formatPercent(trainingPercent)}
           detail={summary ? "Certificates not yet expired" : loadingDetail}
           icon={GraduationCap}
           iconTone="emerald"
@@ -79,7 +102,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="Leave Requests"
-          value={summary ? String(summary.pendingLeaveCount) : "—"}
+          value={pendingLeave !== null ? String(pendingLeave) : "—"}
           detail={summary ? (isLineManager ? "Pending your approval" : "Your pending requests") : loadingDetail}
           icon={CalendarOff}
           iconTone="amber"
@@ -87,7 +110,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="Performance"
-          value={summary?.myAveragePerformanceScore != null ? `${summary.myAveragePerformanceScore} / 5` : "—"}
+          value={performanceScore !== null ? `${performanceScore} / 5` : "—"}
           detail={summary ? "Your average review score" : loadingDetail}
           icon={TrendingUp}
           iconTone="blue"
@@ -96,7 +119,7 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="self-start text-sm font-semibold text-slate-900">Attendance overview</h3>
+          <h3 className="self-start text-sm font-semibold text-slate-900">Work Shift Overview</h3>
           {summary ? (
             <ProgressRing
               percent={summary.attendance.percentPresent}
@@ -109,10 +132,45 @@ export function DashboardPage() {
           )}
         </div>
 
-        <div className="lg:col-span-2">
-          <ModuleLaunchGrid />
-        </div>
+        <Card title="Recent Shift Requests">
+          {!summary || summary.recentShiftRequests.length === 0 ? (
+            <p className="px-6 py-8 text-center text-sm text-slate-500">
+              {summary ? "No shift requests yet." : loadingDetail}
+            </p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {summary.recentShiftRequests.map((request) => (
+                <li key={request.id} className="flex items-center justify-between gap-3 px-6 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-900">{request.employeeName}</p>
+                    <p className="text-xs text-slate-500">
+                      {formatDate(request.requestedShiftDate)} — {ShiftTypeLabels[request.requestedShiftType]}
+                    </p>
+                  </div>
+                  <StatusBadge status={request.status} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card title="Latest Activity">
+          {activity.length === 0 ? (
+            <p className="px-6 py-8 text-center text-sm text-slate-500">No recent activity.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {activity.map((entry) => (
+                <li key={entry.id} className="px-6 py-3">
+                  <p className="text-sm text-slate-700">{entry.message}</p>
+                  <p className="text-xs text-slate-400">{formatDateTime(entry.createdAtUtc)}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
+
+      <ModuleLaunchGrid />
     </div>
   );
 }

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using GoldFieldsHR.Application.Auth;
 using GoldFieldsHR.Application.Common;
 using GoldFieldsHR.Application.Common.Interfaces;
+using GoldFieldsHR.Application.Notifications;
 using GoldFieldsHR.Domain.Entities;
 using GoldFieldsHR.Domain.Enums;
 using GoldFieldsHR.Infrastructure.Identity;
@@ -14,7 +15,8 @@ namespace GoldFieldsHR.Infrastructure.Auth;
 public class AuthService(
     UserManager<AppUser> userManager,
     ApplicationDbContext dbContext,
-    IJwtTokenGenerator jwtTokenGenerator) : IAuthService
+    IJwtTokenGenerator jwtTokenGenerator,
+    INotificationService notificationService) : IAuthService
 {
     private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(14);
 
@@ -60,6 +62,12 @@ public class AuthService(
 
         await userManager.AddToRoleAsync(user, request.Role.ToString());
 
+        // Self-registration always grants the Employee role (enforced above); RequestedRole only
+        // records what the registrant asked for so HR can review and grant it via SetRoleAsync.
+        var requestedRole = request.RequestedRole.HasValue && request.RequestedRole.Value != EmployeeRole.Employee
+            ? request.RequestedRole
+            : null;
+
         var employee = new Employee
         {
             Id = Guid.NewGuid(),
@@ -69,6 +77,7 @@ public class AuthService(
             LastName = request.LastName,
             JobTitle = request.JobTitle,
             Role = request.Role,
+            RequestedRole = requestedRole,
             SiteId = request.SiteId,
             ManagerId = managerId
         };
@@ -78,6 +87,20 @@ public class AuthService(
         dbContext.Employees.Add(employee);
         await dbContext.SaveChangesAsync(cancellationToken);
         await userManager.UpdateAsync(user);
+
+        if (requestedRole.HasValue)
+        {
+            var hrEmployeeIds = await dbContext.Employees
+                .Where(e => e.IsActive && e.Role == EmployeeRole.HR)
+                .Select(e => e.Id)
+                .ToListAsync(cancellationToken);
+
+            await notificationService.CreateForManyAsync(
+                hrEmployeeIds,
+                $"{employee.FullName} requested the {requestedRole} role at registration.",
+                "/settings",
+                cancellationToken);
+        }
 
         var (token, expiresAtUtc) = jwtTokenGenerator.GenerateToken(user.Id, user.Email!, employee);
         var refreshToken = await IssueRefreshTokenAsync(user.Id, cancellationToken);

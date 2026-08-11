@@ -14,6 +14,7 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
         RuleFor(x => x.JobTitle).NotEmpty().MaximumLength(150);
         RuleFor(x => x.SiteId).NotEqual(Guid.Empty);
         RuleFor(x => x.ManagerEmployeeNumber).MaximumLength(50);
+        RuleFor(x => x.RequestedRole).IsInEnum().When(x => x.RequestedRole.HasValue);
     }
 }
 

@@ -18,6 +18,7 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
         var medicalCompliancePercent = await GetMedicalCompliancePercentAsync(cancellationToken);
         var trainingCompliancePercent = await GetTrainingCompliancePercentAsync(cancellationToken);
         var myAveragePerformanceScore = await GetMyAveragePerformanceScoreAsync(employeeId, cancellationToken);
+        var recentShiftRequests = await GetRecentShiftRequestsAsync(employee.Id, employee.Role, cancellationToken);
 
         return new DashboardSummaryDto(
             attendance,
@@ -25,7 +26,8 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
             incidentsThisMonth,
             medicalCompliancePercent,
             trainingCompliancePercent,
-            myAveragePerformanceScore);
+            myAveragePerformanceScore,
+            recentShiftRequests);
     }
 
     private async Task<AttendanceSummaryDto> GetAttendanceSummaryAsync(Guid siteId, CancellationToken cancellationToken)
@@ -105,5 +107,23 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
             .ToListAsync(cancellationToken);
 
         return scores.Count == 0 ? null : Math.Round(scores.Average(), 1);
+    }
+
+    private async Task<IReadOnlyList<RecentShiftRequestDto>> GetRecentShiftRequestsAsync(
+        Guid employeeId, EmployeeRole role, CancellationToken cancellationToken)
+    {
+        var query = role is EmployeeRole.LineManager or EmployeeRole.HR or EmployeeRole.Executive
+            ? dbContext.ShiftChangeRequests.Include(r => r.Employee)
+            : dbContext.ShiftChangeRequests.Include(r => r.Employee).Where(r => r.EmployeeId == employeeId);
+
+        var requests = await query
+            .OrderByDescending(r => r.CreatedAtUtc)
+            .Take(5)
+            .ToListAsync(cancellationToken);
+
+        return requests
+            .Select(r => new RecentShiftRequestDto(
+                r.Id, r.Employee!.FullName, r.RequestedShiftDate, r.RequestedShiftType, r.Status, r.CreatedAtUtc))
+            .ToList();
     }
 }

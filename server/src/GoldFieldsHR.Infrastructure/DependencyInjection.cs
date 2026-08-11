@@ -1,5 +1,6 @@
 using System.Text;
 using GoldFieldsHR.Application.Account;
+using GoldFieldsHR.Application.Announcements;
 using GoldFieldsHR.Application.Attachments;
 using GoldFieldsHR.Application.Auth;
 using GoldFieldsHR.Application.Certificates;
@@ -81,6 +82,7 @@ public static class DependencyInjection
 
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAnnouncementService, Announcements.AnnouncementService>();
         services.AddScoped<IAccountService, Account.AccountService>();
         services.AddScoped<ICertificateService, Certificates.CertificateService>();
         services.AddScoped<IPerformanceService, Performance.PerformanceService>();

@@ -67,7 +67,7 @@ export function PerformanceReviewsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger-children flex flex-col gap-6">
       {isLineManager && (
         <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="mb-4 text-sm font-semibold text-slate-900">Give a performance review</h3>

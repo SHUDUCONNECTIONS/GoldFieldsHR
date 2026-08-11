@@ -76,7 +76,7 @@ export function EmergencyPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger-children flex flex-col gap-6">
       {isSecurity && (
         <div className="rounded-lg border border-red-200 bg-white shadow-sm">
           <div className="border-b border-red-100 bg-red-50 px-6 py-4">

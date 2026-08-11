@@ -62,7 +62,7 @@ export function MedicalPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger-children flex flex-col gap-6">
       {isMedical && (
         <>
           <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">

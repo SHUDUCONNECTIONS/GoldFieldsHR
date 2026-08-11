@@ -11,6 +11,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Site> Sites => Set<Site>();
+    public DbSet<Announcement> Announcements => Set<Announcement>();
     public DbSet<TimesheetEntry> TimesheetEntries => Set<TimesheetEntry>();
     public DbSet<TimesheetCorrectionRequest> TimesheetCorrectionRequests => Set<TimesheetCorrectionRequest>();
     public DbSet<ShiftChangeRequest> ShiftChangeRequests => Set<ShiftChangeRequest>();

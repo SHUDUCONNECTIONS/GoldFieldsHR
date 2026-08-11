@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Pickaxe } from "lucide-react";
 import { forgotPassword } from "../api/auth";
 import { extractErrorMessage } from "../api/client";
+import ramsLogo from "../assets/rams-logo.png";
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -31,14 +31,12 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
-      <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-xl">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4">
+      <div className="gradient-glow" />
+      <div className="fade-in-up relative z-10 w-full max-w-sm rounded-lg bg-white p-8 shadow-xl">
         <div className="mb-6 flex items-center gap-2">
-          <Pickaxe className="h-6 w-6 text-amber-500" />
-          <div className="leading-tight">
-            <p className="font-semibold text-slate-900">GoldFields HR</p>
-            <p className="text-xs text-slate-500">Workforce. Safety. Performance.</p>
-          </div>
+          <img src={ramsLogo} alt="Rams Mining Technologies" className="h-9 w-auto" />
+          <p className="text-xs text-slate-500">Engineering the Future of Mining.</p>
         </div>
 
         <h2 className="mb-1 text-lg font-semibold text-slate-900">Forgot password</h2>

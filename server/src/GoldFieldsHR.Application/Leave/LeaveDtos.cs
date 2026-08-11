@@ -6,7 +6,8 @@ public record SubmitLeaveRequest(
     LeaveType LeaveType,
     DateOnly StartDate,
     DateOnly EndDate,
-    string Reason);
+    string Reason,
+    string ContactNumber);
 
 public record ReviewLeaveRequest(bool Approve, string? RejectionReason);
 
@@ -19,6 +20,7 @@ public record LeaveRequestDto(
     DateOnly EndDate,
     int DaysRequested,
     string Reason,
+    string ContactNumber,
     LeaveRequestStatus Status,
     DateTime CreatedAtUtc,
     DateTime? ReviewedAtUtc,

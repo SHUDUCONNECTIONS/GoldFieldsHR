@@ -13,6 +13,7 @@ public class LeaveRequest
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
     public string Reason { get; set; } = string.Empty;
+    public string ContactNumber { get; set; } = string.Empty;
 
     public LeaveRequestStatus Status { get; set; } = LeaveRequestStatus.Pending;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

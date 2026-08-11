@@ -26,6 +26,13 @@ public class EmployeeDirectoryService(ApplicationDbContext dbContext, UserManage
             employeesQuery = employeesQuery.Where(e => e.IsActive == query.IsActive.Value);
         }
 
+        if (query.HasRequestedRole.HasValue)
+        {
+            employeesQuery = query.HasRequestedRole.Value
+                ? employeesQuery.Where(e => e.RequestedRole != null)
+                : employeesQuery.Where(e => e.RequestedRole == null);
+        }
+
         var joined =
             from e in employeesQuery
             join u in dbContext.Users on e.UserId equals u.Id into userGroup
@@ -109,6 +116,8 @@ public class EmployeeDirectoryService(ApplicationDbContext dbContext, UserManage
 
         if (employee.Role == request.Role)
         {
+            employee.RequestedRole = null;
+            await dbContext.SaveChangesAsync(cancellationToken);
             return Result<EmployeeSummaryDto>.Success(ToDto(employee, await GetEmailAsync(employee.UserId, cancellationToken)));
         }
 
@@ -125,9 +134,29 @@ public class EmployeeDirectoryService(ApplicationDbContext dbContext, UserManage
         await userManager.AddToRoleAsync(user, newRoleName);
 
         employee.Role = request.Role;
+        employee.RequestedRole = null;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Result<EmployeeSummaryDto>.Success(ToDto(employee, user.Email ?? string.Empty));
+    }
+
+    public async Task<Result<EmployeeSummaryDto>> DismissRequestedRoleAsync(
+        Guid employeeId, CancellationToken cancellationToken = default)
+    {
+        var employee = await dbContext.Employees
+            .Include(e => e.Site)
+            .Include(e => e.Manager)
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+
+        if (employee is null)
+        {
+            return Result<EmployeeSummaryDto>.Failure("Employee not found.");
+        }
+
+        employee.RequestedRole = null;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Result<EmployeeSummaryDto>.Success(ToDto(employee, await GetEmailAsync(employee.UserId, cancellationToken)));
     }
 
     private async Task<string> GetEmailAsync(Guid userId, CancellationToken cancellationToken) =>
@@ -188,6 +217,7 @@ public class EmployeeDirectoryService(ApplicationDbContext dbContext, UserManage
         email,
         employee.JobTitle,
         employee.Role,
+        employee.RequestedRole,
         employee.Site?.Name ?? string.Empty,
         employee.IsActive,
         employee.CreatedAtUtc,

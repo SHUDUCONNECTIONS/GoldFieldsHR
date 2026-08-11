@@ -174,6 +174,15 @@ public class AttachmentService(ApplicationDbContext dbContext, IOptions<FileStor
                 var isIncidentReviewer = requester.Role is EmployeeRole.SafetyOfficer or EmployeeRole.HR or EmployeeRole.Executive;
                 return (isIncidentOwner || isIncidentReviewer, isIncidentOwner || isIncidentReviewer);
 
+            case AttachmentEntityType.LeaveRequest:
+                var leaveRequest = await dbContext.LeaveRequests
+                    .FirstOrDefaultAsync(l => l.Id == entityId, cancellationToken);
+                if (leaveRequest is null) return null;
+                var isLeaveOwner = leaveRequest.EmployeeId == requester.Id;
+                var isLeaveReviewer = requester.Role is EmployeeRole.LineManager or EmployeeRole.HR or EmployeeRole.Executive;
+                // Only the employee attaches their own medical certificate; owner + reviewers can view it.
+                return (isLeaveOwner, isLeaveOwner || isLeaveReviewer);
+
             default:
                 return null;
         }

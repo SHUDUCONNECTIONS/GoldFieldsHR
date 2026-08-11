@@ -14,6 +14,7 @@ public class Employee
     public string LastName { get; set; } = string.Empty;
     public string JobTitle { get; set; } = string.Empty;
     public EmployeeRole Role { get; set; }
+    public EmployeeRole? RequestedRole { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 

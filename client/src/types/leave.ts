@@ -3,6 +3,8 @@ export const LeaveType = {
   Sick: 1,
   FamilyResponsibility: 2,
   Unpaid: 3,
+  InjuryOnDuty: 4,
+  Maternity: 5,
 } as const;
 export type LeaveType = (typeof LeaveType)[keyof typeof LeaveType];
 
@@ -11,7 +13,12 @@ export const LeaveTypeLabels: Record<LeaveType, string> = {
   [LeaveType.Sick]: "Sick Leave",
   [LeaveType.FamilyResponsibility]: "Family Responsibility Leave",
   [LeaveType.Unpaid]: "Unpaid Leave",
+  [LeaveType.InjuryOnDuty]: "Injury on Duty",
+  [LeaveType.Maternity]: "Maternity Leave",
 };
+
+// Sick Leave and Injury on Duty require a medical certificate on the paper form.
+export const LEAVE_TYPES_REQUIRING_CERTIFICATE: readonly LeaveType[] = [LeaveType.Sick, LeaveType.InjuryOnDuty];
 
 export const LeaveRequestStatus = {
   Pending: 0,
@@ -35,6 +42,7 @@ export interface LeaveRequestDto {
   endDate: string;
   daysRequested: number;
   reason: string;
+  contactNumber: string;
   status: LeaveRequestStatus;
   createdAtUtc: string;
   reviewedAtUtc: string | null;
@@ -47,6 +55,7 @@ export interface SubmitLeaveRequest {
   startDate: string;
   endDate: string;
   reason: string;
+  contactNumber: string;
 }
 
 export interface ReviewLeaveRequest {

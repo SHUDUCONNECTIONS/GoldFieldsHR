@@ -69,7 +69,7 @@ export function ReportsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger-children flex flex-col gap-6">
       <div className="flex justify-end">
         <button
           type="button"

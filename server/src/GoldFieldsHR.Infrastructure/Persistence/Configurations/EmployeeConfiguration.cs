@@ -37,6 +37,10 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasConversion<string>()
             .HasMaxLength(30);
 
+        builder.Property(e => e.RequestedRole)
+            .HasConversion<string>()
+            .HasMaxLength(30);
+
         builder.HasOne(e => e.Site)
             .WithMany(s => s.Employees)
             .HasForeignKey(e => e.SiteId)

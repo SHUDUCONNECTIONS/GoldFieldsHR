@@ -3,6 +3,7 @@ export const AttachmentEntityType = {
   Certificate: 1,
   MedicalExamination: 2,
   IncidentReport: 3,
+  LeaveRequest: 4,
 } as const;
 export type AttachmentEntityType = (typeof AttachmentEntityType)[keyof typeof AttachmentEntityType];
 
