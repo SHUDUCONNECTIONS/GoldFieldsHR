@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { extractErrorMessage } from "../api/client";
 import {
@@ -9,6 +9,7 @@ import {
 } from "../api/incidents";
 import { AttachmentsPanel } from "../components/AttachmentsPanel";
 import { IncidentSeverityBadge, IncidentStatusBadge } from "../components/IncidentBadges";
+import { StepForm, type WizardStep } from "../components/StepForm";
 import { formatDateTime } from "../lib/format";
 import { AttachmentEntityType } from "../types/attachment";
 import { EmployeeRole } from "../types/auth";
@@ -61,8 +62,7 @@ export function IncidentsPage() {
     loadAll();
   }, [loadAll]);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function handleSubmit() {
     setError(null);
     setIsSubmitting(true);
     try {
@@ -81,6 +81,80 @@ export function IncidentsPage() {
       setIsSubmitting(false);
     }
   }
+
+  const steps: WizardStep[] = [
+    {
+      title: "What happened",
+      validate: () => (!form.title || !form.location ? "Please fill in all fields." : null),
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Title
+            <input
+              required
+              value={form.title}
+              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Severity
+            <select
+              value={form.severity}
+              onChange={(e) => setForm((prev) => ({ ...prev, severity: Number(e.target.value) as IncidentSeverity }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            >
+              {Object.entries(IncidentSeverityLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Location
+            <input
+              required
+              value={form.location}
+              onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+        </div>
+      ),
+    },
+    {
+      title: "Details",
+      validate: () => (!form.occurredAt || !form.description ? "Please fill in all fields." : null),
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            When did it happen?
+            <input
+              type="datetime-local"
+              required
+              value={form.occurredAt}
+              onChange={(e) => setForm((prev) => ({ ...prev, occurredAt: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Description
+            <textarea
+              required
+              value={form.description}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              rows={3}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+        </div>
+      ),
+    },
+  ];
 
   async function advanceStatus(id: string, status: IncidentStatus) {
     setIsUpdating(true);
@@ -129,7 +203,7 @@ export function IncidentsPage() {
                           type="button"
                           disabled={isUpdating}
                           onClick={() => advanceStatus(item.id, IncidentStatus.UnderInvestigation)}
-                          className="rounded-md bg-amber-500 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-amber-400 disabled:opacity-50"
+                          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
                         >
                           Start investigation
                         </button>
@@ -143,7 +217,7 @@ export function IncidentsPage() {
                             onChange={(e) =>
                               setNotesById((prev) => ({ ...prev, [item.id]: e.target.value }))
                             }
-                            className="w-56 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-amber-500 focus:outline-none"
+                            className="w-56 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                           />
                           <button
                             type="button"
@@ -167,74 +241,14 @@ export function IncidentsPage() {
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-sm font-semibold text-slate-900">Report an incident or near miss</h3>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-            Title
-            <input
-              required
-              value={form.title}
-              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700">
-            Severity
-            <select
-              value={form.severity}
-              onChange={(e) => setForm((prev) => ({ ...prev, severity: Number(e.target.value) as IncidentSeverity }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            >
-              {Object.entries(IncidentSeverityLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700">
-            Location
-            <input
-              required
-              value={form.location}
-              onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-            When did it happen?
-            <input
-              type="datetime-local"
-              required
-              value={form.occurredAt}
-              onChange={(e) => setForm((prev) => ({ ...prev, occurredAt: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-            Description
-            <textarea
-              required
-              value={form.description}
-              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-              rows={3}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-1 w-fit rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 sm:col-span-2"
-          >
-            {isSubmitting ? "Submitting..." : "Submit report"}
-          </button>
-        </form>
+        <StepForm
+          steps={steps}
+          onSubmit={handleSubmit}
+          submitLabel="Submit report"
+          submittingLabel="Submitting..."
+          isSubmitting={isSubmitting}
+          error={error}
+        />
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm">

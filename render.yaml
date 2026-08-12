@@ -1,0 +1,65 @@
+# Render Blueprint — deploys the whole stack (API, frontend, database) from this repo.
+#
+# To use: push this repo to GitHub, then in the Render dashboard choose
+# "New +" -> "Blueprint" and point it at the repo. Render reads this file and
+# provisions all three resources below in one go. See README.md "Deploying to
+# Render" for the full walkthrough and post-deploy checklist.
+#
+# This targets the free tier for a testing/demo deployment, not production:
+# - The free Postgres database is deleted after its trial period (Render's
+#   current policy — check the dashboard when creating it). Fine for testing;
+#   upgrade the `plan` below (or point ConnectionStrings__Default at an
+#   external provider like Neon/Supabase) before relying on it long-term.
+# - Free web services spin down after 15 minutes of inactivity; the next
+#   request wakes them up with a ~30-60s cold start.
+
+databases:
+  - name: goldfields-hr-db
+    plan: free
+    databaseName: goldfields_hr
+    user: goldfields_app
+
+services:
+  - type: web
+    name: goldfields-hr-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./server/src/GoldFieldsHR.Api/Dockerfile
+    dockerContext: ./server
+    healthCheckPath: /healthz
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: goldfields-hr-db
+          property: connectionString
+      - key: Jwt__Key
+        generateValue: true
+      - key: Jwt__Issuer
+        value: GoldFieldsHR
+      - key: Jwt__Audience
+        value: GoldFieldsHR.Client
+      - key: Jwt__ExpiryMinutes
+        value: "60"
+      # Must match the client service's public URL exactly (scheme + host, no
+      # trailing slash). Render normally derives it from the `name` below, but
+      # confirm the actual URL after first deploy and update this if it differs.
+      - key: Cors__AllowedOrigins__0
+        value: https://goldfields-hr-client.onrender.com
+
+  - type: web
+    name: goldfields-hr-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      # Must match the api service's public URL exactly, with /api appended.
+      # Baked into the JS bundle at build time — changing it requires a rebuild.
+      - key: VITE_API_BASE_URL
+        value: https://goldfields-hr-api.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

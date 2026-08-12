@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { extractErrorMessage } from "../api/client";
 import {
@@ -8,6 +8,7 @@ import {
   getPerformanceReviewsGivenByMe,
 } from "../api/performance";
 import { ScoreBadge } from "../components/ScoreBadge";
+import { StepForm, type WizardStep } from "../components/StepForm";
 import { formatDateTime } from "../lib/format";
 import { EmployeeRole } from "../types/auth";
 import type { PerformanceReviewDto } from "../types/performance";
@@ -51,8 +52,7 @@ export function PerformanceReviewsPage() {
     loadAll();
   }, [loadAll]);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function handleSubmit() {
     setError(null);
     setIsSubmitting(true);
     try {
@@ -66,64 +66,78 @@ export function PerformanceReviewsPage() {
     }
   }
 
+  const steps: WizardStep[] = [
+    {
+      title: "Who & when",
+      validate: () => (!form.employeeNumber || !form.periodLabel ? "Please fill in all fields." : null),
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Employee number
+            <input
+              required
+              value={form.employeeNumber}
+              onChange={(e) => setForm((prev) => ({ ...prev, employeeNumber: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Period (e.g. Q3 2026)
+            <input
+              required
+              value={form.periodLabel}
+              onChange={(e) => setForm((prev) => ({ ...prev, periodLabel: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+        </div>
+      ),
+    },
+    {
+      title: "Score & comments",
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Score
+            <select
+              value={form.score}
+              onChange={(e) => setForm((prev) => ({ ...prev, score: Number(e.target.value) }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            >
+              {[5, 4, 3, 2, 1].map((value) => (
+                <option key={value} value={value}>
+                  {value} / 5
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Comments (optional)
+            <textarea
+              value={form.comments}
+              onChange={(e) => setForm((prev) => ({ ...prev, comments: e.target.value }))}
+              rows={2}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="stagger-children flex flex-col gap-6">
       {isLineManager && (
         <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="mb-4 text-sm font-semibold text-slate-900">Give a performance review</h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm text-slate-700">
-              Employee number
-              <input
-                required
-                value={form.employeeNumber}
-                onChange={(e) => setForm((prev) => ({ ...prev, employeeNumber: e.target.value }))}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm text-slate-700">
-              Period (e.g. Q3 2026)
-              <input
-                required
-                value={form.periodLabel}
-                onChange={(e) => setForm((prev) => ({ ...prev, periodLabel: e.target.value }))}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm text-slate-700">
-              Score
-              <select
-                value={form.score}
-                onChange={(e) => setForm((prev) => ({ ...prev, score: Number(e.target.value) }))}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-              >
-                {[5, 4, 3, 2, 1].map((value) => (
-                  <option key={value} value={value}>
-                    {value} / 5
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-              Comments (optional)
-              <textarea
-                value={form.comments}
-                onChange={(e) => setForm((prev) => ({ ...prev, comments: e.target.value }))}
-                rows={2}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-              />
-            </label>
-
-            {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="mt-1 w-fit rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 sm:col-span-2"
-            >
-              {isSubmitting ? "Submitting..." : "Submit review"}
-            </button>
-          </form>
+          <StepForm
+            steps={steps}
+            onSubmit={handleSubmit}
+            submitLabel="Submit review"
+            submittingLabel="Submitting..."
+            isSubmitting={isSubmitting}
+            error={error}
+          />
         </div>
       )}
 

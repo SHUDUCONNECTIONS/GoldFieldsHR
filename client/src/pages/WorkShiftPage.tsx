@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { extractErrorMessage } from "../api/client";
 import {
@@ -11,6 +11,7 @@ import {
 } from "../api/workShift";
 import { ShiftApprovalQueue } from "../components/ShiftApprovalQueue";
 import { StatusBadge } from "../components/StatusBadge";
+import { StepForm, type WizardStep } from "../components/StepForm";
 import { formatDate, formatDateTime } from "../lib/format";
 import { EmployeeRole } from "../types/auth";
 import { ShiftType, ShiftTypeLabels, type ShiftChangeRequestDto } from "../types/workShift";
@@ -57,8 +58,7 @@ export function WorkShiftPage() {
     loadAll();
   }, [loadAll]);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function handleSubmit() {
     setError(null);
     setIsSubmitting(true);
     try {
@@ -76,6 +76,71 @@ export function WorkShiftPage() {
       setIsSubmitting(false);
     }
   }
+
+  const steps: WizardStep[] = [
+    {
+      title: "Shift",
+      validate: () => (!form.requestedShiftDate ? "Please fill in all fields." : null),
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Requested date
+            <input
+              type="date"
+              required
+              value={form.requestedShiftDate}
+              onChange={(e) => setForm((prev) => ({ ...prev, requestedShiftDate: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Shift
+            <select
+              value={form.requestedShiftType}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, requestedShiftType: Number(e.target.value) as ShiftType }))
+              }
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            >
+              {Object.entries(ShiftTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ),
+    },
+    {
+      title: "Reason",
+      validate: () => (!form.reason ? "Please fill in all fields." : null),
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Reason
+            <input
+              required
+              value={form.reason}
+              onChange={(e) => setForm((prev) => ({ ...prev, reason: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Comments (optional)
+            <textarea
+              value={form.comments}
+              onChange={(e) => setForm((prev) => ({ ...prev, comments: e.target.value }))}
+              rows={2}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+        </div>
+      ),
+    },
+  ];
 
   async function handleLineManagerApprove(id: string) {
     setIsReviewing(true);
@@ -149,65 +214,14 @@ export function WorkShiftPage() {
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-sm font-semibold text-slate-900">Request a shift change</h3>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm text-slate-700">
-            Requested date
-            <input
-              type="date"
-              required
-              value={form.requestedShiftDate}
-              onChange={(e) => setForm((prev) => ({ ...prev, requestedShiftDate: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700">
-            Shift
-            <select
-              value={form.requestedShiftType}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, requestedShiftType: Number(e.target.value) as ShiftType }))
-              }
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            >
-              {Object.entries(ShiftTypeLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-            Reason
-            <input
-              required
-              value={form.reason}
-              onChange={(e) => setForm((prev) => ({ ...prev, reason: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-            Comments (optional)
-            <textarea
-              value={form.comments}
-              onChange={(e) => setForm((prev) => ({ ...prev, comments: e.target.value }))}
-              rows={2}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-1 w-fit rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 sm:col-span-2"
-          >
-            {isSubmitting ? "Submitting..." : "Submit request"}
-          </button>
-        </form>
+        <StepForm
+          steps={steps}
+          onSubmit={handleSubmit}
+          submitLabel="Submit request"
+          submittingLabel="Submitting..."
+          isSubmitting={isSubmitting}
+          error={error}
+        />
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm">

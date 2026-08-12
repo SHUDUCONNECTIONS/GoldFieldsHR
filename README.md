@@ -112,6 +112,30 @@ Starts Postgres, the API (`http://localhost:5167`), and the web portal behind ng
 
 This compose file is for local use only, not a production deployment: it runs the API in the `Development` environment (Swagger enabled, verbose EF logging), uses a hardcoded `Jwt__Key` and Postgres password defined directly in `docker-compose.yml`, and serves everything over plain HTTP. Replace those before deploying anywhere real.
 
+### Deploying to Render (shared testing URL)
+
+`render.yaml` at the repo root is a [Render Blueprint](https://render.com/docs/blueprint-spec) that provisions the whole stack — Postgres, the API, and the frontend — from this repo in one go, so people other than you can reach the app over the internet instead of just `localhost`.
+
+1. Push this repo to GitHub (Render deploys from a Git remote, not a local working copy).
+2. In the [Render dashboard](https://dashboard.render.com), click **New +** -> **Blueprint** and point it at the repo. Render reads `render.yaml` and shows a preview of the 3 resources it's about to create (`goldfields-hr-db`, `goldfields-hr-api`, `goldfields-hr-client`) — click **Apply**.
+3. First deploy takes a few minutes (Postgres provisioning + two Docker/npm builds). Once the API service is live, open its **Logs** tab and confirm you see `Applying migration...` and no seeding errors — that means the bootstrap accounts below now exist on the live database.
+4. Open the client service's URL (shown on its dashboard page, `https://goldfields-hr-client.onrender.com` unless the name was suffixed — see step 5) and sign in with the same bootstrap credentials as local dev:
+
+   | Email | Password | Role |
+   | --- | --- | --- |
+   | `hr.admin@goldfieldshr.local` | `Bootstrap@123` | HR |
+   | `exec.admin@goldfieldshr.local` | `Bootstrap@123` | Executive |
+
+   **Change these passwords (Settings > Change password) before sharing the URL with real testers** — they're the same publicly-documented defaults used locally.
+5. If Render suffixed either service's name (only happens if `goldfields-hr-api`/`-client` were already taken), the API's `Cors__AllowedOrigins__0` env var and the client's `VITE_API_BASE_URL` build-time env var (both set in `render.yaml`) won't match the real URLs. Update them in each service's **Environment** tab to the actual URLs shown on the dashboard, then trigger a manual redeploy of both (the client needs a rebuild since `VITE_API_BASE_URL` is baked into the JS bundle at build time, not read at runtime).
+
+Free-tier caveats — fine for testing, revisit before treating this as a real deployment:
+- The free Postgres database is deleted after Render's free trial period. Upgrade its plan, or swap `ConnectionStrings__Default` for an external always-free provider (e.g. Neon, Supabase), before relying on it beyond that window.
+- Free web services spin down after 15 minutes idle; the next request wakes them back up with a ~30-60s cold start — expect that delay on the first login of the day.
+- The API runs in `Production` there (unlike the Docker Compose setup above), so Swagger is disabled and HSTS is on — matches how a real deployment should look, just backed by free-tier infra.
+
+**Troubleshooting a failed first deploy:** check the API service's Logs tab. A database connection failure on startup almost always means `ConnectionStrings__Default` (populated automatically from `fromDatabase` in `render.yaml`) doesn't match what Npgsql expects — Render provides it in `postgres://user:password@host/dbname` URI form, which Npgsql accepts natively, but if that specific string ever needs adjusting, the Postgres service's own Info tab shows the individual host/port/user/password/database fields you'd use to build an equivalent `Host=...;Port=...;Database=...;Username=...;Password=...` value by hand.
+
 ## Modules
 
 All sidebar modules are implemented end-to-end (backend + frontend): Dashboard, Timesheet, Work Shift, Leave Management, Safety & FLRA, Incidents & Near Miss, Policies & Documents, Medical, Training & Certifications, PPE Management, Permits to Work, Performance (KPI), My Certificates, Reports & Analytics, Emergency (SOS), Settings.

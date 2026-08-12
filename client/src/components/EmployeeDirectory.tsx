@@ -18,11 +18,13 @@ import type { EmployeeSummaryDto } from "../types/employee";
 
 interface EmployeeDirectoryProps {
   canManage: boolean;
+  /** Grant/dismiss pending role requests — HR has this via canManage; Executive gets it without full admin rights. */
+  canApproveRoleRequests?: boolean;
 }
 
 const PAGE_SIZE = 25;
 
-export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
+export function EmployeeDirectory({ canManage, canApproveRoleRequests = canManage }: EmployeeDirectoryProps) {
   const { showSuccess, showError } = useToast();
   const [employees, setEmployees] = useState<EmployeeSummaryDto[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -72,14 +74,14 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
   }, [load]);
 
   const loadPendingRequests = useCallback(async () => {
-    if (!canManage) return;
+    if (!canApproveRoleRequests) return;
     try {
       const data = await getEmployees({ hasRequestedRole: true, pageSize: 100 });
       setPendingRequests(data.items);
     } catch (err) {
       setError(extractErrorMessage(err));
     }
-  }, [canManage]);
+  }, [canApproveRoleRequests]);
 
   useEffect(() => {
     loadPendingRequests();
@@ -225,7 +227,7 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {canManage && (
+      {canApproveRoleRequests && (
         <RoleRequestQueue
           items={pendingRequests}
           isBusy={busyId !== null}
@@ -243,12 +245,12 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
             placeholder="Search name, #, email, title..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-56 rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-amber-500 focus:outline-none"
+            className="w-56 rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
           />
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value === "all" ? "all" : (Number(e.target.value) as EmployeeRole))}
-            className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-amber-500 focus:outline-none"
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
           >
             <option value="all">All roles</option>
             {Object.entries(EmployeeRoleLabels).map(([value, label]) => (
@@ -260,7 +262,7 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
-            className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-amber-500 focus:outline-none"
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
           >
             <option value="all">All statuses</option>
             <option value="active">Active</option>
@@ -311,7 +313,7 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
                       <select
                         value={roleInput}
                         onChange={(e) => setRoleInput(Number(e.target.value) as EmployeeRole)}
-                        className="rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-amber-500 focus:outline-none"
+                        className="rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                       >
                         {Object.entries(EmployeeRoleLabels).map(([value, label]) => (
                           <option key={value} value={value}>
@@ -323,7 +325,7 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
                         type="button"
                         disabled={busyId === employee.id}
                         onClick={() => confirmEditRole(employee.id)}
-                        className="rounded-md bg-slate-950 px-2 py-1 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                        className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
                       >
                         Save
                       </button>
@@ -348,13 +350,13 @@ export function EmployeeDirectory({ canManage }: EmployeeDirectoryProps) {
                         placeholder="Employee #"
                         value={managerNumberInput}
                         onChange={(e) => setManagerNumberInput(e.target.value)}
-                        className="w-28 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-amber-500 focus:outline-none"
+                        className="w-28 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                       />
                       <button
                         type="button"
                         disabled={busyId === employee.id}
                         onClick={() => confirmEditManager(employee.id)}
-                        className="rounded-md bg-slate-950 px-2 py-1 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                        className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
                       >
                         Save
                       </button>

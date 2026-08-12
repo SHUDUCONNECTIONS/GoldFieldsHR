@@ -1,5 +1,6 @@
 using GoldFieldsHR.Application.Common;
 using GoldFieldsHR.Application.Employees;
+using GoldFieldsHR.Domain.Enums;
 using GoldFieldsHR.Infrastructure.Identity;
 using GoldFieldsHR.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -104,6 +105,15 @@ public class EmployeeDirectoryService(ApplicationDbContext dbContext, UserManage
             return Result<EmployeeSummaryDto>.Failure("You cannot change your own role.");
         }
 
+        var actingEmployee = await dbContext.Employees
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == actingEmployeeId, cancellationToken);
+
+        if (actingEmployee is null)
+        {
+            return Result<EmployeeSummaryDto>.Failure("Acting employee not found.");
+        }
+
         var employee = await dbContext.Employees
             .Include(e => e.Site)
             .Include(e => e.Manager)
@@ -112,6 +122,13 @@ public class EmployeeDirectoryService(ApplicationDbContext dbContext, UserManage
         if (employee is null)
         {
             return Result<EmployeeSummaryDto>.Failure("Employee not found.");
+        }
+
+        // Executives may only approve an employee's own pending role request, not
+        // reassign roles arbitrarily — that stays an HR-only power.
+        if (actingEmployee.Role == EmployeeRole.Executive && request.Role != employee.RequestedRole)
+        {
+            return Result<EmployeeSummaryDto>.Failure("Executives may only approve an employee's pending requested role.");
         }
 
         if (employee.Role == request.Role)

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { extractErrorMessage } from "../api/client";
 import { getAllCertificates, getMyCertificates, issueCertificate } from "../api/certificates";
 import { AttachmentsPanel } from "../components/AttachmentsPanel";
 import { CertificateStatusBadge } from "../components/CertificateStatusBadge";
+import { StepForm, type WizardStep } from "../components/StepForm";
 import { formatDate } from "../lib/format";
 import { AttachmentEntityType } from "../types/attachment";
 import { EmployeeRole } from "../types/auth";
@@ -41,8 +42,7 @@ export function CertificatesPage() {
     loadAll();
   }, [loadAll]);
 
-  async function handleIssue(event: FormEvent) {
-    event.preventDefault();
+  async function handleIssue() {
     setError(null);
     setIsSubmitting(true);
     try {
@@ -56,70 +56,85 @@ export function CertificatesPage() {
     }
   }
 
+  const steps: WizardStep[] = [
+    {
+      title: "Certificate",
+      validate: () => (!form.employeeNumber || !form.title ? "Please fill in all fields." : null),
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Employee number
+            <input
+              required
+              value={form.employeeNumber}
+              onChange={(e) => setForm((prev) => ({ ...prev, employeeNumber: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Certificate title
+            <input
+              required
+              value={form.title}
+              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+        </div>
+      ),
+    },
+    {
+      title: "Dates & notes",
+      validate: () => (!form.issuedDate || !form.expiryDate ? "Please fill in all fields." : null),
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Issued date
+            <input
+              type="date"
+              required
+              value={form.issuedDate}
+              onChange={(e) => setForm((prev) => ({ ...prev, issuedDate: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Expiry date
+            <input
+              type="date"
+              required
+              value={form.expiryDate}
+              onChange={(e) => setForm((prev) => ({ ...prev, expiryDate: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Notes (optional)
+            <input
+              value={form.notes}
+              onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="stagger-children flex flex-col gap-6">
       {isHR && (
         <>
           <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="mb-4 text-sm font-semibold text-slate-900">Issue a certificate</h3>
-            <form onSubmit={handleIssue} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-1 text-sm text-slate-700">
-                Employee number
-                <input
-                  required
-                  value={form.employeeNumber}
-                  onChange={(e) => setForm((prev) => ({ ...prev, employeeNumber: e.target.value }))}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-700">
-                Certificate title
-                <input
-                  required
-                  value={form.title}
-                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-700">
-                Issued date
-                <input
-                  type="date"
-                  required
-                  value={form.issuedDate}
-                  onChange={(e) => setForm((prev) => ({ ...prev, issuedDate: e.target.value }))}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-700">
-                Expiry date
-                <input
-                  type="date"
-                  required
-                  value={form.expiryDate}
-                  onChange={(e) => setForm((prev) => ({ ...prev, expiryDate: e.target.value }))}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-                Notes (optional)
-                <input
-                  value={form.notes}
-                  onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-                />
-              </label>
-
-              {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="mt-1 w-fit rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 sm:col-span-2"
-              >
-                {isSubmitting ? "Issuing..." : "Issue certificate"}
-              </button>
-            </form>
+            <StepForm
+              steps={steps}
+              onSubmit={handleIssue}
+              submitLabel="Issue certificate"
+              submittingLabel="Issuing..."
+              isSubmitting={isSubmitting}
+              error={error}
+            />
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white shadow-sm">

@@ -51,11 +51,11 @@ export function DashboardPage() {
 
   return (
     <div className="stagger-children flex flex-col gap-6">
-      <div className="relative overflow-hidden rounded-lg">
+      <div className="circuit-texture relative overflow-hidden rounded-xl bg-slate-950 px-6 py-6 shadow-lg">
         <div className="gradient-glow" />
         <div className="relative z-10">
-          <h2 className="text-xl font-semibold text-slate-900">Welcome back, {firstName}</h2>
-          <p className="text-sm text-slate-500">Here's what's happening today.</p>
+          <h2 className="text-xl font-semibold text-white">Welcome back, {firstName}</h2>
+          <p className="text-sm text-slate-400">Here's what's happening today.</p>
         </div>
       </div>
 

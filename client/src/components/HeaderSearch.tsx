@@ -74,7 +74,7 @@ export function HeaderSearch() {
           }
         }}
         placeholder="Jump to a module..."
-        className="w-72 rounded-md border border-slate-300 bg-slate-50 py-1.5 pl-9 pr-14 text-sm text-slate-700 focus:border-amber-500 focus:outline-none"
+        className="w-72 rounded-md border border-slate-300 bg-slate-50 py-1.5 pl-9 pr-14 text-sm text-slate-700 focus:border-red-500 focus:outline-none"
       />
       {!isOpen && !query && (
         <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
@@ -97,7 +97,7 @@ export function HeaderSearch() {
                       onMouseEnter={() => setHighlightedIndex(index)}
                       onClick={() => goTo(item)}
                       className={`flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm ${
-                        index === highlightedIndex ? "bg-amber-50 text-amber-700" : "text-slate-700"
+                        index === highlightedIndex ? "bg-red-50 text-red-700" : "text-slate-700"
                       }`}
                     >
                       <Icon className="h-4 w-4 shrink-0" />

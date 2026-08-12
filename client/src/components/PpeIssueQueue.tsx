@@ -29,7 +29,7 @@ export function PpeIssueQueue({ items, isBusy, onIssue }: PpeIssueQueueProps) {
                 type="button"
                 disabled={isBusy}
                 onClick={() => onIssue(item.id)}
-                className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
               >
                 Mark issued
               </button>

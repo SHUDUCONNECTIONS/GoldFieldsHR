@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Siren } from "lucide-react";
+import { Menu, Siren } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { NotificationBell } from "../NotificationBell";
 import { HeaderSearch } from "../HeaderSearch";
@@ -12,21 +13,37 @@ import { EmployeeRoleLabels } from "../../types/auth";
 export function AppShell() {
   const location = useLocation();
   const { session } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const currentLabel =
     NAV_ITEMS.find((item) => item.path === location.pathname)?.label ?? "Rams Mining Technologies";
 
   return (
-    <div className="flex h-screen bg-slate-100">
-      <Sidebar />
+    <div className="bg-cream flex h-screen">
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-950/60 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <Sidebar isOpen={isSidebarOpen} onNavigate={() => setIsSidebarOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-6 py-3">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold text-slate-900">{currentLabel}</h1>
+        <header className="relative flex items-center justify-between gap-2 border-b border-slate-200 bg-gradient-to-r from-white via-white to-red-50/40 px-3 py-3 shadow-[0_1px_0_0_rgba(225,29,72,0.12)] sm:gap-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              aria-label="Open menu"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 lg:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h1 className="truncate text-base font-semibold text-slate-900 sm:text-lg">{currentLabel}</h1>
             <HeaderSearch />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
             {session && (
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+              <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 sm:inline-flex">
                 {EmployeeRoleLabels[session.role]}
               </span>
             )}
@@ -34,15 +51,16 @@ export function AppShell() {
             <NotificationBell />
             <Link
               to="/emergency"
-              className="sos-pulse flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-red-500"
+              aria-label="Emergency SOS"
+              className="sos-pulse flex h-10 w-10 items-center justify-center gap-1.5 rounded-md bg-red-600 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-red-500 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5"
             >
-              <Siren className="h-3.5 w-3.5" />
-              SOS
+              <Siren className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+              <span className="hidden sm:inline">SOS</span>
             </Link>
             <ProfileDropdown />
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />
         </main>
       </div>

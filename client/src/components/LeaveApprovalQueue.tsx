@@ -89,13 +89,13 @@ export function LeaveApprovalQueue({ items, isBusy, onApprove, onReject }: Leave
                     placeholder="Reason for rejection (optional)"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="min-w-[240px] flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-amber-500 focus:outline-none"
+                    className="min-w-[240px] flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                   />
                   <button
                     type="button"
                     disabled={isBusy}
                     onClick={() => confirmReject(item.id)}
-                    className="rounded-md bg-slate-950 px-3 py-1 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                    className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
                   >
                     Confirm reject
                   </button>

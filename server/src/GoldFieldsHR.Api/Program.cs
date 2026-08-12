@@ -81,16 +81,23 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// Skipped only for the "Testing" environment (WebApplicationFactory integration tests), which
+// swaps in an EF InMemory provider that doesn't support relational migrations. Runs in both
+// Development and Production so a deployed instance gets its schema and bootstrap HR/Executive
+// accounts without a separate manual migration step.
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.MigrateAsync();
+    await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await dbContext.Database.MigrateAsync();
-    await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
 }
 else
 {

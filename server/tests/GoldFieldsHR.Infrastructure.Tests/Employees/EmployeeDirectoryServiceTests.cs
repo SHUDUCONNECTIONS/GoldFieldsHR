@@ -201,4 +201,39 @@ public class EmployeeDirectoryServiceTests
         userManagerMock.Verify(m => m.RemoveFromRoleAsync(appUser, "Employee"), Times.Once);
         userManagerMock.Verify(m => m.AddToRoleAsync(appUser, "SafetyOfficer"), Times.Once);
     }
+
+    [Fact]
+    public async Task SetRole_ExecutiveApprovingOwnPendingRequest_Succeeds()
+    {
+        using var dbContext = TestDbContextFactory.Create();
+        var executive = dbContext.AddEmployee(EmployeeRole.Executive);
+        var employee = dbContext.AddEmployee(EmployeeRole.Employee);
+        employee.RequestedRole = EmployeeRole.SafetyOfficer;
+        dbContext.SaveChanges();
+        var appUser = new AppUser { Id = employee.UserId, Email = "promoted@example.com" };
+
+        var userManagerMock = MockUserManagerFactory.Create();
+        userManagerMock.Setup(m => m.FindByIdAsync(employee.UserId.ToString())).ReturnsAsync(appUser);
+        var service = new EmployeeDirectoryService(dbContext, userManagerMock.Object);
+
+        var result = await service.SetRoleAsync(employee.Id, executive.Id, new SetEmployeeRoleRequest(EmployeeRole.SafetyOfficer));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(EmployeeRole.SafetyOfficer, result.Value!.Role);
+        Assert.Null(result.Value.RequestedRole);
+    }
+
+    [Fact]
+    public async Task SetRole_ExecutiveArbitraryReassignment_Fails()
+    {
+        using var dbContext = TestDbContextFactory.Create();
+        var executive = dbContext.AddEmployee(EmployeeRole.Executive);
+        var employee = dbContext.AddEmployee(EmployeeRole.Employee);
+        var service = new EmployeeDirectoryService(dbContext, MockUserManagerFactory.Create().Object);
+
+        var result = await service.SetRoleAsync(employee.Id, executive.Id, new SetEmployeeRoleRequest(EmployeeRole.SafetyOfficer));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Executives may only approve an employee's pending requested role.", result.Error);
+    }
 }

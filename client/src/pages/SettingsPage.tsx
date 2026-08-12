@@ -100,7 +100,7 @@ export function SettingsPage() {
               required
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -111,7 +111,7 @@ export function SettingsPage() {
               minLength={8}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -122,7 +122,7 @@ export function SettingsPage() {
               minLength={8}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
             />
           </label>
 
@@ -132,7 +132,7 @@ export function SettingsPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-1 w-fit rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="mt-1 w-fit rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
           >
             {isSubmitting ? "Changing..." : "Change password"}
           </button>
@@ -140,7 +140,9 @@ export function SettingsPage() {
       </div>
 
       {(isHR || isExecutive) && <SiteManagement canManage={isHR} />}
-      {(isHR || isExecutive) && <EmployeeDirectory canManage={isHR} />}
+      {(isHR || isExecutive) && (
+        <EmployeeDirectory canManage={isHR} canApproveRoleRequests={isHR || isExecutive} />
+      )}
     </div>
   );
 }

@@ -37,9 +37,13 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4">
-      <div className="gradient-glow" />
-      <div className="fade-in-up relative z-10 w-full max-w-sm rounded-lg bg-white p-8 shadow-xl">
+    <div className="bg-cream relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      <div className="soft-blobs">
+        <span className="blob-tr" />
+        <span className="blob-bl" />
+      </div>
+      <div className="fade-in-up relative z-10 w-full max-w-sm overflow-hidden rounded-2xl bg-white p-8 shadow-xl">
+        <span className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-red-500 via-red-600 to-slate-900" />
         <div className="mb-6 flex items-center gap-2">
           <img src={ramsLogo} alt="Rams Mining Technologies" className="h-9 w-auto" />
           <p className="text-xs text-slate-500">Engineering the Future of Mining.</p>
@@ -58,7 +62,7 @@ export function ResetPasswordPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
               />
             </label>
 
@@ -69,7 +73,7 @@ export function ResetPasswordPage() {
                 rows={3}
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                className="rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-amber-500 focus:outline-none"
+                className="rounded-md border border-slate-300 px-3 py-2 font-mono text-xs transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
               />
             </label>
 
@@ -81,7 +85,7 @@ export function ResetPasswordPage() {
                 minLength={8}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
               />
             </label>
 
@@ -93,7 +97,7 @@ export function ResetPasswordPage() {
                 minLength={8}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
               />
             </label>
 
@@ -102,7 +106,7 @@ export function ResetPasswordPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+              className="mt-2 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
             >
               {isSubmitting ? "Resetting..." : "Reset password"}
             </button>
@@ -110,7 +114,7 @@ export function ResetPasswordPage() {
         )}
 
         <p className="mt-4 text-center text-sm text-slate-500">
-          <Link to="/login" className="font-medium text-amber-600 hover:underline">
+          <Link to="/login" className="font-medium text-red-600 hover:underline">
             Back to sign in
           </Link>
         </p>

@@ -2,11 +2,32 @@
 
 :root {
   color-scheme: light;
+  --cream: #f2eee3;
+  --cream-tile: #ece5d3;
 }
 
 body {
   margin: 0;
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--cream);
+}
+
+.bg-cream {
+  background-color: var(--cream);
+}
+.bg-cream-tile {
+  background-color: var(--cream-tile);
+}
+
+/* Underground/gloved-hand use: kill the 300ms double-tap-to-zoom delay on
+   every interactive element instead of relying on per-component classes. */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
 }
 
 #root {
@@ -94,10 +115,90 @@ body {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 25% 30%, rgba(245, 158, 11, 0.22), transparent 55%),
-    radial-gradient(circle at 75% 70%, rgba(217, 119, 6, 0.16), transparent 55%);
+    radial-gradient(circle at 25% 30%, rgba(225, 29, 72, 0.24), transparent 55%),
+    radial-gradient(circle at 75% 70%, rgba(30, 41, 59, 0.35), transparent 55%);
   filter: blur(40px);
   animation: gradient-drift 14s ease-in-out infinite;
+}
+
+/* Warm, soft-focus decorative circles for light/cream surfaces (auth
+   backdrop) — pale yellow + tan blobs floating behind a centered card,
+   the counterpart to .circuit-texture for surfaces that stay dark. */
+.soft-blobs {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.soft-blobs::before,
+.soft-blobs::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+}
+.soft-blobs::before {
+  top: -8%;
+  left: -10%;
+  width: 30vw;
+  height: 30vw;
+  min-width: 260px;
+  min-height: 260px;
+  background: #f3e6a8;
+  animation: gradient-drift 16s ease-in-out infinite;
+}
+.soft-blobs::after {
+  bottom: -12%;
+  right: -8%;
+  width: 26vw;
+  height: 26vw;
+  min-width: 220px;
+  min-height: 220px;
+  background: #e7e0cb;
+  animation: gradient-drift 18s ease-in-out infinite reverse;
+}
+.soft-blobs .blob-tr,
+.soft-blobs .blob-bl {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+}
+.soft-blobs .blob-tr {
+  top: -6%;
+  right: 8%;
+  width: 16vw;
+  height: 16vw;
+  min-width: 140px;
+  min-height: 140px;
+  background: #ece5cd;
+}
+.soft-blobs .blob-bl {
+  bottom: 6%;
+  left: 6%;
+  width: 14vw;
+  height: 14vw;
+  min-width: 120px;
+  min-height: 120px;
+  background: #f3e6a8;
+}
+
+/* Faint circuit-board texture for dark brand surfaces (sidebar, auth
+   backdrop): a dot grid plus a few hairline traces, low-opacity so it reads
+   as depth rather than pattern. */
+.circuit-texture {
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(rgba(225, 29, 72, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(225, 29, 72, 0.08) 1px, transparent 1px);
+  background-size:
+    22px 22px,
+    88px 88px,
+    88px 88px;
+  background-position:
+    0 0,
+    0 0,
+    0 0;
 }
 
 .sos-pulse {
@@ -118,12 +219,6 @@ body {
     box-shadow 0.2s ease,
     border-color 0.2s ease;
 }
-.rounded-lg.border.border-slate-200.bg-white.shadow-sm:hover {
-  transform: translateY(-2px);
-  border-color: rgba(245, 158, 11, 0.35);
-  box-shadow: 0 12px 28px -12px rgba(245, 158, 11, 0.28);
-}
-
 /* Subtle lift on every button/link-as-button in the app. */
 button:not(:disabled),
 a.rounded-md,
@@ -133,18 +228,32 @@ a.rounded-lg {
     box-shadow 0.15s ease,
     background-color 0.15s ease;
 }
-button:not(:disabled):hover,
-a.rounded-md:hover,
-a.rounded-lg:hover {
-  transform: translateY(-1px);
-}
 button:not(:disabled):active {
   transform: translateY(0);
 }
 
-/* Active sidebar nav item gets a soft amber glow instead of a flat fill. */
-.bg-amber-400\/10.text-amber-300 {
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.15), 0 0 16px -4px rgba(245, 158, 11, 0.35);
+/* Hover-only lift/glow effects, gated to real pointer devices. Touchscreens
+   have no mouse to move away, so an unguarded :hover rule gets "stuck" on
+   whatever was last tapped (Chromium re-hits :hover after layout changes
+   even without a new pointer event) — a real problem for a tablet/phone
+   used underground with no mouse to clear it. */
+@media (hover: hover) and (pointer: fine) {
+  .rounded-lg.border.border-slate-200.bg-white.shadow-sm:hover {
+    transform: translateY(-2px);
+    border-color: rgba(225, 29, 72, 0.3);
+    box-shadow: 0 12px 28px -12px rgba(225, 29, 72, 0.25);
+  }
+
+  button:not(:disabled):hover,
+  a.rounded-md:hover,
+  a.rounded-lg:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Active sidebar nav item gets a soft brand-red glow instead of a flat fill. */
+.bg-red-500\/10.text-red-300 {
+  box-shadow: inset 0 0 0 1px rgba(225, 29, 72, 0.2), 0 0 16px -4px rgba(225, 29, 72, 0.45);
 }
 
 @media (prefers-reduced-motion: reduce) {

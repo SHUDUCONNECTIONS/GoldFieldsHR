@@ -38,14 +38,14 @@ export function ProfileDropdown() {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-xs font-semibold text-slate-950 hover:bg-amber-400"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white hover:bg-red-400"
         aria-label="Account"
       >
         {getInitials(session.fullName)}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-slate-200 bg-white shadow-lg">
+        <div className="absolute right-0 z-50 mt-2 w-56 max-w-[calc(100vw-1.5rem)] rounded-lg border border-slate-200 bg-white shadow-lg">
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="truncate text-sm font-medium text-slate-900">{session.fullName}</p>
             <p className="truncate text-xs text-slate-500">{EmployeeRoleLabels[session.role]}</p>
@@ -54,7 +54,7 @@ export function ProfileDropdown() {
             <Link
               to="/settings"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
             >
               <Settings className="h-3.5 w-3.5" />
               Settings
@@ -65,7 +65,7 @@ export function ProfileDropdown() {
                 setIsOpen(false);
                 signOut();
               }}
-              className="flex items-center gap-2 px-4 py-2 text-left text-sm text-slate-600 hover:bg-slate-50"
+              className="flex items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-600 hover:bg-slate-50"
             >
               <LogOut className="h-3.5 w-3.5" />
               Sign out

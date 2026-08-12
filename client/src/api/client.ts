@@ -4,8 +4,12 @@ export const TOKEN_STORAGE_KEY = "goldfields.accessToken";
 export const REFRESH_TOKEN_STORAGE_KEY = "goldfields.refreshToken";
 export const SESSION_EXPIRED_EVENT = "auth:session-expired";
 
+// VITE_API_BASE_URL lets the built frontend point at an API hosted on a different
+// origin (e.g. a separately deployed Render service). Falls back to the relative
+// "/api" path used by the Vite dev server proxy and the docker-compose nginx setup,
+// where the frontend and API share an origin.
 export const apiClient = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
 });
 
 apiClient.interceptors.request.use((config) => {

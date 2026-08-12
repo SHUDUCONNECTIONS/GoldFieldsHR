@@ -10,6 +10,6 @@ describe("Badge", () => {
 
   it("applies tone-specific styling", () => {
     render(<Badge label="Rejected" tone="red" />);
-    expect(screen.getByText("Rejected")).toHaveClass("bg-red-100");
+    expect(screen.getByText("Rejected")).toHaveClass("bg-red-50", "ring-red-300/60");
   });
 });

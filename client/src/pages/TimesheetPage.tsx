@@ -203,7 +203,7 @@ export function TimesheetPage() {
               type="button"
               onClick={handleClockOut}
               disabled={isSubmitting}
-              className="mt-4 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+              className="mt-4 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
             >
               {isSubmitting ? "Clocking out..." : "Clock out"}
             </button>
@@ -216,7 +216,7 @@ export function TimesheetPage() {
               type="button"
               onClick={handleClockIn}
               disabled={isSubmitting}
-              className="mt-4 rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400 disabled:opacity-50"
+              className="mt-4 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
             >
               {isSubmitting ? "Clocking in..." : "Clock in"}
             </button>
@@ -256,7 +256,7 @@ export function TimesheetPage() {
                         <button
                           type="button"
                           onClick={() => startCorrection(entry)}
-                          className="text-xs text-amber-600 hover:underline"
+                          className="text-xs text-red-600 hover:underline"
                         >
                           Request correction
                         </button>
@@ -273,7 +273,7 @@ export function TimesheetPage() {
                               type="datetime-local"
                               value={correctedClockIn}
                               onChange={(e) => setCorrectedClockIn(e.target.value)}
-                              className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-amber-500 focus:outline-none"
+                              className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                             />
                           </label>
                           <label className="flex flex-col gap-1 text-xs text-slate-700">
@@ -282,7 +282,7 @@ export function TimesheetPage() {
                               type="datetime-local"
                               value={correctedClockOut}
                               onChange={(e) => setCorrectedClockOut(e.target.value)}
-                              className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-amber-500 focus:outline-none"
+                              className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                             />
                           </label>
                           <label className="flex flex-col gap-1 text-xs text-slate-700">
@@ -291,7 +291,7 @@ export function TimesheetPage() {
                               required
                               value={correctionReason}
                               onChange={(e) => setCorrectionReason(e.target.value)}
-                              className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-amber-500 focus:outline-none"
+                              className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                             />
                           </label>
                         </div>
@@ -300,7 +300,7 @@ export function TimesheetPage() {
                             type="button"
                             disabled={isSubmitting || !correctionReason}
                             onClick={() => submitCorrection(entry)}
-                            className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                            className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
                           >
                             Submit request
                           </button>

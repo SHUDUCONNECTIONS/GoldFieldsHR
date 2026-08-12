@@ -114,7 +114,7 @@ export function SiteManagement({ canManage }: SiteManagementProps) {
               required
               value={form.name}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -123,13 +123,13 @@ export function SiteManagement({ canManage }: SiteManagementProps) {
               required
               value={form.location}
               onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
             />
           </label>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
           >
             {isSubmitting ? "Adding..." : "Add site"}
           </button>
@@ -160,14 +160,14 @@ export function SiteManagement({ canManage }: SiteManagementProps) {
                       <input
                         value={editForm.name}
                         onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                        className="w-32 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-amber-500 focus:outline-none"
+                        className="w-32 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                       />
                     </td>
                     <td className="px-6 py-2">
                       <input
                         value={editForm.location}
                         onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
-                        className="w-32 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-amber-500 focus:outline-none"
+                        className="w-32 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                       />
                     </td>
                     <td className="px-6 py-2 text-slate-700">{site.employeeCount}</td>
@@ -180,7 +180,7 @@ export function SiteManagement({ canManage }: SiteManagementProps) {
                           type="button"
                           disabled={busyId === site.id}
                           onClick={() => confirmEdit(site.id)}
-                          className="rounded-md bg-slate-950 px-3 py-1 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                          className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
                         >
                           Save
                         </button>

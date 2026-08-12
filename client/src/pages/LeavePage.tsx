@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { extractErrorMessage } from "../api/client";
 import {
@@ -10,6 +10,7 @@ import {
 import { AttachmentsPanel } from "../components/AttachmentsPanel";
 import { LeaveApprovalQueue } from "../components/LeaveApprovalQueue";
 import { LeaveStatusBadge } from "../components/LeaveStatusBadge";
+import { StepForm, type WizardStep } from "../components/StepForm";
 import { formatDate, formatDateTime } from "../lib/format";
 import { AttachmentEntityType } from "../types/attachment";
 import { EmployeeRole } from "../types/auth";
@@ -61,8 +62,7 @@ export function LeavePage() {
     loadAll();
   }, [loadAll]);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function handleSubmit() {
     setError(null);
     setIsSubmitting(true);
     try {
@@ -75,6 +75,90 @@ export function LeavePage() {
       setIsSubmitting(false);
     }
   }
+
+  const steps: WizardStep[] = [
+    {
+      title: "Leave details",
+      validate: () => (!form.startDate || !form.endDate ? "Please fill in all fields." : null),
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Leave type
+            <select
+              value={form.leaveType}
+              onChange={(e) => setForm((prev) => ({ ...prev, leaveType: Number(e.target.value) as LeaveType }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            >
+              {Object.entries(LeaveTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            {LEAVE_TYPES_REQUIRING_CERTIFICATE.includes(form.leaveType) && (
+              <span className="text-xs text-amber-600">Attach a medical certificate below after submitting.</span>
+            )}
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Start date
+            <input
+              type="date"
+              required
+              value={form.startDate}
+              onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            End date
+            <input
+              type="date"
+              required
+              value={form.endDate}
+              onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+        </div>
+      ),
+    },
+    {
+      title: "Reason & contact",
+      validate: () => (!form.reason || !form.contactNumber ? "Please fill in all fields." : null),
+      content: (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Reason
+            <input
+              required
+              value={form.reason}
+              onChange={(e) => setForm((prev) => ({ ...prev, reason: e.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Contact number during leave
+            <input
+              type="tel"
+              required
+              value={form.contactNumber}
+              onChange={(e) => setForm((prev) => ({ ...prev, contactNumber: e.target.value }))}
+              placeholder="e.g. 082 000 0000"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            />
+          </label>
+
+          <p className="text-xs text-slate-500 sm:col-span-2">
+            You must seek approval for leave, other than sick leave, at least 2 days prior to your day of leave. On
+            the first day of sick leave, inform your Manager/Supervisor before 6AM that you are sick.
+          </p>
+        </div>
+      ),
+    },
+  ];
 
   async function handleApprove(id: string) {
     setIsReviewing(true);
@@ -113,86 +197,14 @@ export function LeavePage() {
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-sm font-semibold text-slate-900">Apply for leave</h3>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-            Leave type
-            <select
-              value={form.leaveType}
-              onChange={(e) => setForm((prev) => ({ ...prev, leaveType: Number(e.target.value) as LeaveType }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            >
-              {Object.entries(LeaveTypeLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            {LEAVE_TYPES_REQUIRING_CERTIFICATE.includes(form.leaveType) && (
-              <span className="text-xs text-amber-600">
-                Attach a medical certificate below after submitting.
-              </span>
-            )}
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700">
-            Start date
-            <input
-              type="date"
-              required
-              value={form.startDate}
-              onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700">
-            End date
-            <input
-              type="date"
-              required
-              value={form.endDate}
-              onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-            Reason
-            <input
-              required
-              value={form.reason}
-              onChange={(e) => setForm((prev) => ({ ...prev, reason: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-            Contact number during leave
-            <input
-              type="tel"
-              required
-              value={form.contactNumber}
-              onChange={(e) => setForm((prev) => ({ ...prev, contactNumber: e.target.value }))}
-              placeholder="e.g. 082 000 0000"
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-            />
-          </label>
-
-          <p className="text-xs text-slate-500 sm:col-span-2">
-            You must seek approval for leave, other than sick leave, at least 2 days prior to your day of leave. On
-            the first day of sick leave, inform your Manager/Supervisor before 6AM that you are sick.
-          </p>
-
-          {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-1 w-fit rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 sm:col-span-2"
-          >
-            {isSubmitting ? "Submitting..." : "Submit request"}
-          </button>
-        </form>
+        <StepForm
+          steps={steps}
+          onSubmit={handleSubmit}
+          submitLabel="Submit request"
+          submittingLabel="Submitting..."
+          isSubmitting={isSubmitting}
+          error={error}
+        />
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm">

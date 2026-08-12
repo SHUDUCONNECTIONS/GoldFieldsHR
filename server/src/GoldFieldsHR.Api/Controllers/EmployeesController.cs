@@ -42,7 +42,7 @@ public class EmployeesController(IEmployeeDirectoryService employeeDirectoryServ
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
-    [Authorize(Roles = "HR")]
+    [Authorize(Roles = "HR,Executive")]
     [HttpPatch("{id:guid}/role")]
     public async Task<IActionResult> SetRole(Guid id, SetEmployeeRoleRequest request, CancellationToken cancellationToken)
     {
@@ -50,7 +50,7 @@ public class EmployeesController(IEmployeeDirectoryService employeeDirectoryServ
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
-    [Authorize(Roles = "HR")]
+    [Authorize(Roles = "HR,Executive")]
     [HttpPatch("{id:guid}/requested-role/dismiss")]
     public async Task<IActionResult> DismissRequestedRole(Guid id, CancellationToken cancellationToken)
     {

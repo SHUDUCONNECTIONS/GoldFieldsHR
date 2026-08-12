@@ -86,7 +86,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={toggleOpen}
-        className="relative flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+        className="relative flex h-10 w-10 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700"
         aria-label="Notifications"
       >
         <Bell className="h-4 w-4" />
@@ -98,11 +98,11 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-80 rounded-lg border border-slate-200 bg-white shadow-lg">
+        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-lg border border-slate-200 bg-white shadow-lg">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Notifications</p>
             {unreadCount > 0 && (
-              <button type="button" onClick={handleMarkAllAsRead} className="text-xs text-amber-600 hover:underline">
+              <button type="button" onClick={handleMarkAllAsRead} className="text-xs text-red-600 hover:underline">
                 Mark all as read
               </button>
             )}
@@ -118,7 +118,7 @@ export function NotificationBell() {
                       type="button"
                       onClick={() => handleNotificationClick(notification)}
                       className={`flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left text-sm hover:bg-slate-50 ${
-                        notification.isRead ? "text-slate-500" : "bg-amber-50/50 font-medium text-slate-900"
+                        notification.isRead ? "text-slate-500" : "bg-red-50/50 font-medium text-slate-900"
                       }`}
                     >
                       <span>{notification.message}</span>
