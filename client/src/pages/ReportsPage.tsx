@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Award, CalendarOff, ClipboardList, Download, HardHat, Users } from "lucide-react";
+import { AlertTriangle, Award, CalendarOff, Download, HardHat, Scale, Users } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { extractErrorMessage } from "../api/client";
 import { getReportsSummary } from "../api/reports";
@@ -60,8 +60,8 @@ export function ReportsPage() {
       ["Expired certificates", summary.expiredCertificates],
       ["Pending PPE requests", summary.pendingPpeRequests],
       ["PPE awaiting issue", summary.ppeAwaitingIssue],
-      ["Pending permits", summary.pendingPermits],
-      ["Open permits", summary.openPermits],
+      ["Pending legal appointments", summary.pendingLegalAppointments],
+      ["Active legal appointments", summary.activeLegalAppointments],
       ...summary.headcountByRole.map((r) => [`Headcount — ${EmployeeRoleLabels[r.role]}`, r.count]),
       ...summary.openIncidentsBySeverity.map((s) => [`Open incidents — ${IncidentSeverityLabels[s.severity]}`, s.count]),
     ]);
@@ -128,10 +128,10 @@ export function ReportsPage() {
           iconTone="violet"
         />
         <StatCard
-          label="Permits pending"
-          value={String(summary.pendingPermits)}
-          detail={`${summary.openPermits} open on site`}
-          icon={ClipboardList}
+          label="Legal appointments pending"
+          value={String(summary.pendingLegalAppointments)}
+          detail={`${summary.activeLegalAppointments} active`}
+          icon={Scale}
           iconTone="violet"
         />
       </div>

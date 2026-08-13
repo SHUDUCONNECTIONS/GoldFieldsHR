@@ -15,6 +15,7 @@ import { RoleRequestQueue } from "./RoleRequestQueue";
 import { useToast } from "./ToastProvider";
 import { EmployeeRole, EmployeeRoleLabels } from "../types/auth";
 import type { EmployeeSummaryDto } from "../types/employee";
+import { sanitizeEmployeeNumber } from "../utils/textInput";
 
 interface EmployeeDirectoryProps {
   canManage: boolean;
@@ -349,7 +350,7 @@ export function EmployeeDirectory({ canManage, canApproveRoleRequests = canManag
                         type="text"
                         placeholder="Employee #"
                         value={managerNumberInput}
-                        onChange={(e) => setManagerNumberInput(e.target.value)}
+                        onChange={(e) => setManagerNumberInput(sanitizeEmployeeNumber(e.target.value))}
                         className="w-28 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
                       />
                       <button

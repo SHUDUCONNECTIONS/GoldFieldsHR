@@ -22,5 +22,5 @@ public record ReportsSummaryDto(
     int ExpiredCertificates,
     int PendingPpeRequests,
     int PpeAwaitingIssue,
-    int PendingPermits,
-    int OpenPermits);
+    int PendingLegalAppointments,
+    int ActiveLegalAppointments);

@@ -2,44 +2,46 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { extractErrorMessage } from "../api/client";
 import {
-  closePermit,
-  getMyPermits,
-  getOpenPermits,
-  getPendingPermitApprovals,
-  reviewPermit,
-  submitPermitRequest,
-} from "../api/permits";
-import { PermitApprovalQueue } from "../components/PermitApprovalQueue";
-import { PermitCloseQueue } from "../components/PermitCloseQueue";
-import { PermitStatusBadge } from "../components/PermitStatusBadge";
+  getActiveLegalAppointments,
+  getMyLegalAppointments,
+  getPendingLegalAppointmentApprovals,
+  revokeLegalAppointment,
+  reviewLegalAppointment,
+  submitLegalAppointment,
+} from "../api/legalAppointments";
+import { AttachmentsPanel } from "../components/AttachmentsPanel";
+import { LegalAppointmentApprovalQueue } from "../components/LegalAppointmentApprovalQueue";
+import { LegalAppointmentRevokeQueue } from "../components/LegalAppointmentRevokeQueue";
+import { LegalAppointmentStatusBadge } from "../components/LegalAppointmentStatusBadge";
 import { StepForm, type WizardStep } from "../components/StepForm";
 import { formatDate, formatDateTime } from "../lib/format";
+import { AttachmentEntityType } from "../types/attachment";
 import { EmployeeRole } from "../types/auth";
-import { PermitType, PermitTypeLabels, type WorkPermitDto } from "../types/permit";
+import { LegalAppointmentType, LegalAppointmentTypeLabels, type LegalAppointmentDto } from "../types/legalAppointment";
 
-interface PermitRequestForm {
-  permitType: PermitType;
-  location: string;
+interface LegalAppointmentRequestForm {
+  appointmentType: LegalAppointmentType;
+  appointedBy: string;
   description: string;
   validFrom: string;
   validTo: string;
 }
 
-const initialForm: PermitRequestForm = {
-  permitType: PermitType.HotWork,
-  location: "",
+const initialForm: LegalAppointmentRequestForm = {
+  appointmentType: LegalAppointmentType.MineManager2_1,
+  appointedBy: "",
   description: "",
   validFrom: "",
   validTo: "",
 };
 
-export function PermitsPage() {
+export function LegalAppointmentsPage() {
   const { session } = useAuth();
   const isSafetyOfficer = session?.role === EmployeeRole.SafetyOfficer;
 
-  const [myPermits, setMyPermits] = useState<WorkPermitDto[]>([]);
-  const [pendingQueue, setPendingQueue] = useState<WorkPermitDto[]>([]);
-  const [openPermits, setOpenPermits] = useState<WorkPermitDto[]>([]);
+  const [myAppointments, setMyAppointments] = useState<LegalAppointmentDto[]>([]);
+  const [pendingQueue, setPendingQueue] = useState<LegalAppointmentDto[]>([]);
+  const [activeAppointments, setActiveAppointments] = useState<LegalAppointmentDto[]>([]);
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,10 +49,10 @@ export function PermitsPage() {
 
   const loadAll = useCallback(async () => {
     try {
-      const requests: Promise<unknown>[] = [getMyPermits().then(setMyPermits)];
+      const requests: Promise<unknown>[] = [getMyLegalAppointments().then(setMyAppointments)];
       if (isSafetyOfficer) {
-        requests.push(getPendingPermitApprovals().then(setPendingQueue));
-        requests.push(getOpenPermits().then(setOpenPermits));
+        requests.push(getPendingLegalAppointmentApprovals().then(setPendingQueue));
+        requests.push(getActiveLegalAppointments().then(setActiveAppointments));
       }
       await Promise.all(requests);
     } catch (err) {
@@ -66,7 +68,7 @@ export function PermitsPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await submitPermitRequest(form);
+      await submitLegalAppointment(form);
       setForm(initialForm);
       await loadAll();
     } catch (err) {
@@ -78,18 +80,20 @@ export function PermitsPage() {
 
   const steps: WizardStep[] = [
     {
-      title: "Permit & location",
-      validate: () => (!form.location ? "Please fill in all fields." : null),
+      title: "Appointment & authority",
+      validate: () => (!form.appointedBy ? "Please fill in all fields." : null),
       content: (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm text-slate-700">
-            Permit type
+            Appointment type
             <select
-              value={form.permitType}
-              onChange={(e) => setForm((prev) => ({ ...prev, permitType: Number(e.target.value) as PermitType }))}
+              value={form.appointmentType}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, appointmentType: Number(e.target.value) as LegalAppointmentType }))
+              }
               className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
             >
-              {Object.entries(PermitTypeLabels).map(([value, label]) => (
+              {Object.entries(LegalAppointmentTypeLabels).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -97,11 +101,12 @@ export function PermitsPage() {
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
-            Location
+            Appointed by
             <input
               required
-              value={form.location}
-              onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
+              placeholder="e.g. J. Smith, Mine Manager"
+              value={form.appointedBy}
+              onChange={(e) => setForm((prev) => ({ ...prev, appointedBy: e.target.value }))}
               className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
             />
           </label>
@@ -134,7 +139,7 @@ export function PermitsPage() {
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
-            Description of work
+            Scope of appointment
             <textarea
               required
               rows={2}
@@ -151,7 +156,7 @@ export function PermitsPage() {
   async function handleApprove(id: string) {
     setIsBusy(true);
     try {
-      await reviewPermit(id, { approve: true });
+      await reviewLegalAppointment(id, { approve: true });
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -163,7 +168,7 @@ export function PermitsPage() {
   async function handleReject(id: string, reason: string) {
     setIsBusy(true);
     try {
-      await reviewPermit(id, { approve: false, rejectionReason: reason || undefined });
+      await reviewLegalAppointment(id, { approve: false, rejectionReason: reason || undefined });
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -172,10 +177,10 @@ export function PermitsPage() {
     }
   }
 
-  async function handleClose(id: string) {
+  async function handleRevoke(id: string) {
     setIsBusy(true);
     try {
-      await closePermit(id, {});
+      await revokeLegalAppointment(id, {});
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -188,18 +193,18 @@ export function PermitsPage() {
     <div className="stagger-children flex flex-col gap-6">
       {isSafetyOfficer && (
         <>
-          <PermitApprovalQueue
+          <LegalAppointmentApprovalQueue
             items={pendingQueue}
             isBusy={isBusy}
             onApprove={handleApprove}
             onReject={handleReject}
           />
-          <PermitCloseQueue items={openPermits} isBusy={isBusy} onClose={handleClose} />
+          <LegalAppointmentRevokeQueue items={activeAppointments} isBusy={isBusy} onRevoke={handleRevoke} />
         </>
       )}
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-slate-900">Request a work permit</h3>
+        <h3 className="mb-4 text-sm font-semibold text-slate-900">Request a legal appointment</h3>
         <StepForm
           steps={steps}
           onSubmit={handleSubmit}
@@ -212,35 +217,44 @@ export function PermitsPage() {
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-6 py-4">
-          <h3 className="text-sm font-semibold text-slate-900">My permits</h3>
+          <h3 className="text-sm font-semibold text-slate-900">My legal appointments</h3>
         </div>
-        {myPermits.length === 0 ? (
-          <p className="px-6 py-8 text-center text-sm text-slate-500">No permit requests yet.</p>
+        {myAppointments.length === 0 ? (
+          <p className="px-6 py-8 text-center text-sm text-slate-500">No legal appointments yet.</p>
         ) : (
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-wide text-slate-500">
                 <th className="px-6 py-2 font-medium">Type</th>
-                <th className="px-6 py-2 font-medium">Location</th>
+                <th className="px-6 py-2 font-medium">Appointed by</th>
                 <th className="px-6 py-2 font-medium">Valid</th>
                 <th className="px-6 py-2 font-medium">Status</th>
                 <th className="px-6 py-2 font-medium">Submitted</th>
                 <th className="px-6 py-2 font-medium">Rejection reason</th>
+                <th className="px-6 py-2 font-medium">Attachments</th>
               </tr>
             </thead>
             <tbody>
-              {myPermits.map((permit) => (
-                <tr key={permit.id} className="border-t border-slate-100">
-                  <td className="px-6 py-2 text-slate-700">{PermitTypeLabels[permit.permitType]}</td>
-                  <td className="px-6 py-2 text-slate-700">{permit.location}</td>
+              {myAppointments.map((appointment) => (
+                <tr key={appointment.id} className="border-t border-slate-100">
+                  <td className="px-6 py-2 text-slate-700">{LegalAppointmentTypeLabels[appointment.appointmentType]}</td>
+                  <td className="px-6 py-2 text-slate-700">{appointment.appointedBy}</td>
                   <td className="px-6 py-2 text-slate-700">
-                    {formatDate(permit.validFrom)} – {formatDate(permit.validTo)}
+                    {formatDate(appointment.validFrom)} – {formatDate(appointment.validTo)}
                   </td>
                   <td className="px-6 py-2">
-                    <PermitStatusBadge status={permit.status} />
+                    <LegalAppointmentStatusBadge status={appointment.status} />
                   </td>
-                  <td className="px-6 py-2 text-slate-700">{formatDateTime(permit.createdAtUtc)}</td>
-                  <td className="px-6 py-2 text-slate-500">{permit.rejectionReason ?? "—"}</td>
+                  <td className="px-6 py-2 text-slate-700">{formatDateTime(appointment.createdAtUtc)}</td>
+                  <td className="px-6 py-2 text-slate-500">{appointment.rejectionReason ?? "—"}</td>
+                  <td className="px-6 py-2">
+                    <AttachmentsPanel
+                      entityType={AttachmentEntityType.LegalAppointment}
+                      entityId={appointment.id}
+                      canUpload={isSafetyOfficer}
+                      compact
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>

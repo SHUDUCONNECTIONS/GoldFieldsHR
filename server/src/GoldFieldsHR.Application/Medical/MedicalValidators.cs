@@ -1,4 +1,5 @@
 using FluentValidation;
+using GoldFieldsHR.Application.Common;
 
 namespace GoldFieldsHR.Application.Medical;
 
@@ -6,7 +7,8 @@ public class RecordMedicalExaminationRequestValidator : AbstractValidator<Record
 {
     public RecordMedicalExaminationRequestValidator()
     {
-        RuleFor(x => x.EmployeeNumber).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.EmployeeNumber).NotEmpty().MaximumLength(50)
+            .Matches(ValidationPatterns.EmployeeNumber).WithMessage("Employee number can only contain letters, numbers, and hyphens.");
         RuleFor(x => x.Status).IsInEnum();
         RuleFor(x => x.Restrictions).MaximumLength(2000);
         RuleFor(x => x.Notes).MaximumLength(2000);

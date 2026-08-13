@@ -48,10 +48,10 @@ public class ReportsService(ApplicationDbContext dbContext) : IReportsService
         var ppeAwaitingIssue = await dbContext.PpeRequests
             .CountAsync(r => r.Status == PpeRequestStatus.Approved, cancellationToken);
 
-        var pendingPermits = await dbContext.WorkPermits
-            .CountAsync(p => p.Status == PermitStatus.Pending, cancellationToken);
-        var openPermits = await dbContext.WorkPermits
-            .CountAsync(p => p.Status == PermitStatus.Approved, cancellationToken);
+        var pendingLegalAppointments = await dbContext.LegalAppointments
+            .CountAsync(p => p.Status == LegalAppointmentStatus.Pending, cancellationToken);
+        var activeLegalAppointments = await dbContext.LegalAppointments
+            .CountAsync(p => p.Status == LegalAppointmentStatus.Active, cancellationToken);
 
         return new ReportsSummaryDto(
             totalEmployees,
@@ -67,8 +67,8 @@ public class ReportsService(ApplicationDbContext dbContext) : IReportsService
             expiredCertificates,
             pendingPpeRequests,
             ppeAwaitingIssue,
-            pendingPermits,
-            openPermits);
+            pendingLegalAppointments,
+            activeLegalAppointments);
     }
 
     private async Task<ReportsAttendanceDto> GetAttendanceTodayAsync(CancellationToken cancellationToken)

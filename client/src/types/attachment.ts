@@ -4,6 +4,7 @@ export const AttachmentEntityType = {
   MedicalExamination: 2,
   IncidentReport: 3,
   LeaveRequest: 4,
+  LegalAppointment: 5,
 } as const;
 export type AttachmentEntityType = (typeof AttachmentEntityType)[keyof typeof AttachmentEntityType];
 

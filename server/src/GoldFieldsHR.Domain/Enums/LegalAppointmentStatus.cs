@@ -1,9 +1,9 @@
 namespace GoldFieldsHR.Domain.Enums;
 
-public enum PermitStatus
+public enum LegalAppointmentStatus
 {
     Pending = 0,
-    Approved = 1,
+    Active = 1,
     Rejected = 2,
-    Closed = 3
+    Revoked = 3
 }

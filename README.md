@@ -70,7 +70,7 @@ dotnet test
 ```
 
 Runs both backend test projects:
-- **`GoldFieldsHR.Infrastructure.Tests`** — unit tests for the Application/Infrastructure service layer against an EF Core in-memory database, covering workflow state machines and validation rules (Auth, Policies, Incidents, Performance, PPE, Permits, Emergency, Medical, Certificates, Sites, Notifications, Attachments, Timesheet, Employees).
+- **`GoldFieldsHR.Infrastructure.Tests`** — unit tests for the Application/Infrastructure service layer against an EF Core in-memory database, covering workflow state machines and validation rules (Auth, Policies, Incidents, Performance, PPE, Legal Appointments, Emergency, Medical, Certificates, Sites, Notifications, Attachments, Timesheet, Employees).
 - **`GoldFieldsHR.Api.Tests`** — integration tests hosting the real API pipeline via `WebApplicationFactory` (EF InMemory swapped in for Postgres), covering CORS, rate limiting, the FluentValidation action filter, and the global exception handler end-to-end through actual HTTP requests — regression coverage for the middleware pipeline itself, not just the service layer.
 
 ### Frontend
@@ -138,7 +138,7 @@ Free-tier caveats — fine for testing, revisit before treating this as a real d
 
 ## Modules
 
-All sidebar modules are implemented end-to-end (backend + frontend): Dashboard, Timesheet, Work Shift, Leave Management, Safety & FLRA, Incidents & Near Miss, Policies & Documents, Medical, Training & Certifications, PPE Management, Permits to Work, Performance (KPI), My Certificates, Reports & Analytics, Emergency (SOS), Settings.
+All sidebar modules are implemented end-to-end (backend + frontend): Dashboard, Timesheet, Work Shift, Leave Management, Safety & FLRA, Incidents & Near Miss, Policies & Documents, Medical, Training & Certifications, PPE Management, Legal Appointments, Performance (KPI), My Certificates, Reports & Analytics, Emergency (SOS), Settings.
 
 Known simplifications:
 - Work Shift / Leave approvals surface a Line Manager's direct reports first (via `Employee.ManagerId`, set at registration or reassigned by HR in the Settings > Employee directory), but any Line Manager can still see and approve any pending request site-wide as a fallback — there is no hard restriction to direct reports only.

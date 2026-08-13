@@ -183,6 +183,14 @@ public class AttachmentService(ApplicationDbContext dbContext, IOptions<FileStor
                 // Only the employee attaches their own medical certificate; owner + reviewers can view it.
                 return (isLeaveOwner, isLeaveOwner || isLeaveReviewer);
 
+            case AttachmentEntityType.LegalAppointment:
+                var appointment = await dbContext.LegalAppointments
+                    .FirstOrDefaultAsync(a => a.Id == entityId, cancellationToken);
+                if (appointment is null) return null;
+                var isAppointmentOwner = appointment.EmployeeId == requester.Id;
+                var isAppointmentManager = requester.Role == EmployeeRole.SafetyOfficer;
+                return (isAppointmentManager, isAppointmentOwner || isAppointmentManager);
+
             default:
                 return null;
         }

@@ -4,15 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoldFieldsHR.Infrastructure.Persistence.Configurations;
 
-public class WorkPermitConfiguration : IEntityTypeConfiguration<WorkPermit>
+public class LegalAppointmentConfiguration : IEntityTypeConfiguration<LegalAppointment>
 {
-    public void Configure(EntityTypeBuilder<WorkPermit> builder)
+    public void Configure(EntityTypeBuilder<LegalAppointment> builder)
     {
-        builder.ToTable("WorkPermits");
+        builder.ToTable("LegalAppointments");
 
         builder.HasKey(p => p.Id);
 
-        builder.Property(p => p.Location)
+        builder.Property(p => p.AppointedBy)
             .IsRequired()
             .HasMaxLength(200);
 
@@ -23,12 +23,12 @@ public class WorkPermitConfiguration : IEntityTypeConfiguration<WorkPermit>
         builder.Property(p => p.RejectionReason)
             .HasMaxLength(500);
 
-        builder.Property(p => p.ClosedNotes)
+        builder.Property(p => p.RevokedNotes)
             .HasMaxLength(1000);
 
-        builder.Property(p => p.PermitType)
+        builder.Property(p => p.AppointmentType)
             .HasConversion<string>()
-            .HasMaxLength(30);
+            .HasMaxLength(40);
 
         builder.Property(p => p.Status)
             .HasConversion<string>()

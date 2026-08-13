@@ -15,7 +15,7 @@ import { PoliciesPage } from "./pages/PoliciesPage";
 import { AnnouncementsPage } from "./pages/AnnouncementsPage";
 import { MedicalPage } from "./pages/MedicalPage";
 import { PpePage } from "./pages/PpePage";
-import { PermitsPage } from "./pages/PermitsPage";
+import { LegalAppointmentsPage } from "./pages/LegalAppointmentsPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { EmergencyPage } from "./pages/EmergencyPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -35,7 +35,7 @@ const BUILT_PATHS = new Set([
   "/announcements",
   "/medical",
   "/ppe",
-  "/permits",
+  "/legal-appointments",
   "/reports",
   "/emergency",
   "/settings",
@@ -64,7 +64,7 @@ function App() {
           <Route path="/announcements" element={<AnnouncementsPage />} />
           <Route path="/medical" element={<MedicalPage />} />
           <Route path="/ppe" element={<PpePage />} />
-          <Route path="/permits" element={<PermitsPage />} />
+          <Route path="/legal-appointments" element={<LegalAppointmentsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/emergency" element={<EmergencyPage />} />
           <Route path="/settings" element={<SettingsPage />} />

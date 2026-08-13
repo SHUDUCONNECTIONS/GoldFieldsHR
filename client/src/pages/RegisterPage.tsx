@@ -5,6 +5,7 @@ import { extractErrorMessage } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { StepForm, type WizardStep } from "../components/StepForm";
 import { EmployeeRole, EmployeeRoleLabels, type Site } from "../types/auth";
+import { sanitizeEmployeeNumber, sanitizeLettersOnly } from "../utils/textInput";
 import ramsLogo from "../assets/rams-logo.png";
 
 const initialForm = {
@@ -81,7 +82,7 @@ export function RegisterPage() {
               <input
                 required
                 value={form.firstName}
-                onChange={(e) => updateField("firstName", e.target.value)}
+                onChange={(e) => updateField("firstName", sanitizeLettersOnly(e.target.value))}
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
               />
             </label>
@@ -90,7 +91,7 @@ export function RegisterPage() {
               <input
                 required
                 value={form.lastName}
-                onChange={(e) => updateField("lastName", e.target.value)}
+                onChange={(e) => updateField("lastName", sanitizeLettersOnly(e.target.value))}
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
               />
             </label>
@@ -137,7 +138,7 @@ export function RegisterPage() {
               <input
                 required
                 value={form.employeeNumber}
-                onChange={(e) => updateField("employeeNumber", e.target.value)}
+                onChange={(e) => updateField("employeeNumber", sanitizeEmployeeNumber(e.target.value))}
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
               />
             </label>
@@ -178,7 +179,7 @@ export function RegisterPage() {
             Manager&apos;s employee # (optional)
             <input
               value={form.managerEmployeeNumber}
-              onChange={(e) => updateField("managerEmployeeNumber", e.target.value)}
+              onChange={(e) => updateField("managerEmployeeNumber", sanitizeEmployeeNumber(e.target.value))}
               placeholder="e.g. LM-1024"
               className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
             />

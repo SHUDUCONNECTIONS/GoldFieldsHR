@@ -31,6 +31,6 @@ export interface ReportsSummaryDto {
   expiredCertificates: number;
   pendingPpeRequests: number;
   ppeAwaitingIssue: number;
-  pendingPermits: number;
-  openPermits: number;
+  pendingLegalAppointments: number;
+  activeLegalAppointments: number;
 }

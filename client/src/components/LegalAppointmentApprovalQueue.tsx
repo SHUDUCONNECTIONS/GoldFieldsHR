@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { formatDate } from "../lib/format";
-import { PermitTypeLabels, type WorkPermitDto } from "../types/permit";
+import { LegalAppointmentTypeLabels, type LegalAppointmentDto } from "../types/legalAppointment";
 
-interface PermitApprovalQueueProps {
-  items: WorkPermitDto[];
+interface LegalAppointmentApprovalQueueProps {
+  items: LegalAppointmentDto[];
   isBusy: boolean;
   onApprove: (id: string) => void;
   onReject: (id: string, reason: string) => void;
 }
 
-export function PermitApprovalQueue({ items, isBusy, onApprove, onReject }: PermitApprovalQueueProps) {
+export function LegalAppointmentApprovalQueue({ items, isBusy, onApprove, onReject }: LegalAppointmentApprovalQueueProps) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
@@ -39,8 +39,8 @@ export function PermitApprovalQueue({ items, isBusy, onApprove, onReject }: Perm
                 <div>
                   <p className="text-sm font-medium text-slate-900">{item.employeeName}</p>
                   <p className="text-sm text-slate-600">
-                    {PermitTypeLabels[item.permitType]} — {item.location} — {formatDate(item.validFrom)} to{" "}
-                    {formatDate(item.validTo)}
+                    {LegalAppointmentTypeLabels[item.appointmentType]} — Appointed by {item.appointedBy} —{" "}
+                    {formatDate(item.validFrom)} to {formatDate(item.validTo)}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">{item.description}</p>
                 </div>

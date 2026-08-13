@@ -24,7 +24,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<PerformanceReview> PerformanceReviews => Set<PerformanceReview>();
     public DbSet<MedicalExamination> MedicalExaminations => Set<MedicalExamination>();
     public DbSet<PpeRequest> PpeRequests => Set<PpeRequest>();
-    public DbSet<WorkPermit> WorkPermits => Set<WorkPermit>();
+    public DbSet<LegalAppointment> LegalAppointments => Set<LegalAppointment>();
     public DbSet<EmergencyAlert> EmergencyAlerts => Set<EmergencyAlert>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
