@@ -17,4 +17,7 @@ public interface IEmployeeDirectoryService
 
     Task<Result<EmployeeSummaryDto>> DismissRequestedRoleAsync(
         Guid employeeId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<EmployeeSummaryDto>> GetDirectReportsAsync(
+        Guid managerId, CancellationToken cancellationToken = default);
 }

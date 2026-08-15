@@ -1,8 +1,10 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using GoldFieldsHR.Application.Account;
 using GoldFieldsHR.Application.Announcements;
 using GoldFieldsHR.Application.Attachments;
 using GoldFieldsHR.Application.Auth;
+using GoldFieldsHR.Application.Boards;
 using GoldFieldsHR.Application.Certificates;
 using GoldFieldsHR.Application.Common.Interfaces;
 using GoldFieldsHR.Application.Dashboard;
@@ -30,8 +32,23 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using QuestPDF.Infrastructure;
 
 namespace GoldFieldsHR.Infrastructure;
+
+internal static class QuestPdfLicenseInitializer
+{
+    // Runs once when this assembly loads — covers both the API host (via AddInfrastructure)
+    // and unit tests that construct services like BoardTaskService directly without DI.
+    //
+    // Community license is free only for organizations under $1M USD annual revenue.
+    // Confirm Goldfields qualifies, or purchase a commercial QuestPDF license, before
+    // shipping this to production — see https://www.questpdf.com/pricing.html.
+#pragma warning disable CA2255 // Deliberate: guarantees the license is set for every host (API, tests), not just DI-based startup.
+    [ModuleInitializer]
+    internal static void SetLicense() => QuestPDF.Settings.License = LicenseType.Community;
+#pragma warning restore CA2255
+}
 
 public static class DependencyInjection
 {
@@ -76,6 +93,22 @@ public static class DependencyInjection
                     ValidAudience = jwtSettings.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key))
                 };
+
+                // WebSocket upgrade requests can't carry a custom Authorization header, so the
+                // SignalR client sends the token as an access_token query param instead. Only
+                // trust that fallback for hub paths — everywhere else still requires a bearer header.
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization();
@@ -102,6 +135,8 @@ public static class DependencyInjection
         services.AddScoped<IAttachmentService, Attachments.AttachmentService>();
         services.AddScoped<INotificationService, Notifications.NotificationService>();
         services.AddScoped<ISiteService, Sites.SiteService>();
+        services.AddScoped<IBoardService, Boards.BoardService>();
+        services.AddScoped<IBoardTaskService, Boards.BoardTaskService>();
 
         services.AddHostedService<Auth.RefreshTokenCleanupService>();
 

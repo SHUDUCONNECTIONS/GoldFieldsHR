@@ -7,5 +7,6 @@ public enum AttachmentEntityType
     MedicalExamination = 2,
     IncidentReport = 3,
     LeaveRequest = 4,
-    LegalAppointment = 5
+    LegalAppointment = 5,
+    BoardTask = 6
 }

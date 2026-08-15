@@ -176,6 +176,26 @@ public class EmployeeDirectoryService(ApplicationDbContext dbContext, UserManage
         return Result<EmployeeSummaryDto>.Success(ToDto(employee, await GetEmailAsync(employee.UserId, cancellationToken)));
     }
 
+    public async Task<IReadOnlyList<EmployeeSummaryDto>> GetDirectReportsAsync(
+        Guid managerId, CancellationToken cancellationToken = default)
+    {
+        var joined =
+            from e in dbContext.Employees
+                .Include(e => e.Site)
+                .Include(e => e.Manager)
+                .Where(e => e.ManagerId == managerId)
+            join u in dbContext.Users on e.UserId equals u.Id into userGroup
+            from u in userGroup.DefaultIfEmpty()
+            select new { Employee = e, Email = u != null ? (u.Email ?? string.Empty) : string.Empty };
+
+        var rows = await joined
+            .OrderBy(x => x.Employee.FirstName)
+            .ThenBy(x => x.Employee.LastName)
+            .ToListAsync(cancellationToken);
+
+        return rows.Select(x => ToDto(x.Employee, x.Email)).ToList();
+    }
+
     private async Task<string> GetEmailAsync(Guid userId, CancellationToken cancellationToken) =>
         await dbContext.Users.Where(u => u.Id == userId).Select(u => u.Email ?? string.Empty).FirstOrDefaultAsync(cancellationToken)
         ?? string.Empty;

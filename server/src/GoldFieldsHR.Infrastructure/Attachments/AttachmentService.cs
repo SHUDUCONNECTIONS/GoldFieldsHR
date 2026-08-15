@@ -191,6 +191,15 @@ public class AttachmentService(ApplicationDbContext dbContext, IOptions<FileStor
                 var isAppointmentManager = requester.Role == EmployeeRole.SafetyOfficer;
                 return (isAppointmentManager, isAppointmentOwner || isAppointmentManager);
 
+            case AttachmentEntityType.BoardTask:
+                var task = await dbContext.BoardTasks
+                    .FirstOrDefaultAsync(t => t.Id == entityId, cancellationToken);
+                if (task is null) return null;
+                var isTaskAssignee = task.AssigneeEmployeeId == requester.Id;
+                var isBoardOwner = await dbContext.Boards
+                    .AnyAsync(b => b.Id == task.BoardId && b.OwnerEmployeeId == requester.Id, cancellationToken);
+                return (isTaskAssignee || isBoardOwner, isTaskAssignee || isBoardOwner);
+
             default:
                 return null;
         }

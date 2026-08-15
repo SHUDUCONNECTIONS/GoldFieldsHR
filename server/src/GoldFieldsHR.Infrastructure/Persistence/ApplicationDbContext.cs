@@ -29,6 +29,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Board> Boards => Set<Board>();
+    public DbSet<BoardMember> BoardMembers => Set<BoardMember>();
+    public DbSet<BoardTask> BoardTasks => Set<BoardTask>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

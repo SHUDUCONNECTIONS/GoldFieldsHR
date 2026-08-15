@@ -1,6 +1,7 @@
 using FluentValidation;
 using GoldFieldsHR.Api.Common;
 using GoldFieldsHR.Api.HealthChecks;
+using GoldFieldsHR.Api.Hubs;
 using GoldFieldsHR.Application.Auth;
 using GoldFieldsHR.Infrastructure;
 using GoldFieldsHR.Infrastructure.Persistence;
@@ -28,6 +29,7 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>());
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequest>();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddSignalR();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
@@ -114,6 +116,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<BoardHub>("/hubs/board").RequireCors("Frontend");
 
 app.MapHealthChecks("/healthz", new HealthCheckOptions
 {
