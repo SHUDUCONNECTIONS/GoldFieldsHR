@@ -15,5 +15,5 @@ public record DashboardSummaryDto(
     int IncidentsThisMonth,
     double? MedicalCompliancePercent,
     double? TrainingCompliancePercent,
-    double? MyAveragePerformanceScore,
+    double? MyKpiOverallScorePercent,
     IReadOnlyList<RecentShiftRequestDto> RecentShiftRequests);

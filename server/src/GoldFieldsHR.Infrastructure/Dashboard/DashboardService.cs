@@ -16,7 +16,7 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
         var incidentsThisMonth = await GetIncidentsThisMonthAsync(cancellationToken);
         var medicalCompliancePercent = await GetMedicalCompliancePercentAsync(cancellationToken);
         var trainingCompliancePercent = await GetTrainingCompliancePercentAsync(cancellationToken);
-        var myAveragePerformanceScore = await GetMyAveragePerformanceScoreAsync(employeeId, cancellationToken);
+        var myKpiOverallScorePercent = await GetMyKpiOverallScorePercentAsync(employeeId, cancellationToken);
         var recentShiftRequests = await GetRecentShiftRequestsAsync(employee.Id, employee.Role, cancellationToken);
 
         return new DashboardSummaryDto(
@@ -24,7 +24,7 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
             incidentsThisMonth,
             medicalCompliancePercent,
             trainingCompliancePercent,
-            myAveragePerformanceScore,
+            myKpiOverallScorePercent,
             recentShiftRequests);
     }
 
@@ -80,14 +80,23 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
         return Math.Round(compliantCount * 100.0 / expiryDates.Count, 1);
     }
 
-    private async Task<double?> GetMyAveragePerformanceScoreAsync(Guid employeeId, CancellationToken cancellationToken)
+    private async Task<double?> GetMyKpiOverallScorePercentAsync(Guid employeeId, CancellationToken cancellationToken)
     {
-        var scores = await dbContext.PerformanceReviews
-            .Where(r => r.EmployeeId == employeeId)
-            .Select(r => r.Score)
-            .ToListAsync(cancellationToken);
+        // Latest appraisal only, latest-non-null-checkpoint per item — same "current standing"
+        // rollup rule used by KpiService, kept as a small duplicate rather than a cross-service call.
+        var latestAppraisalScores = await dbContext.KpiAppraisals
+            .Where(a => a.EmployeeId == employeeId)
+            .OrderByDescending(a => a.CreatedAtUtc)
+            .Select(a => a.Items.Select(i => i.Checkpoint4Score ?? i.Checkpoint3Score ?? i.Checkpoint2Score ?? i.Checkpoint1Score))
+            .FirstOrDefaultAsync(cancellationToken);
 
-        return scores.Count == 0 ? null : Math.Round(scores.Average(), 1);
+        if (latestAppraisalScores is null)
+        {
+            return null;
+        }
+
+        var percents = latestAppraisalScores.Where(s => s.HasValue).Select(s => (s!.Value - 1) / 2.0 * 100.0).ToList();
+        return percents.Count == 0 ? null : Math.Round(percents.Average(), 1);
     }
 
     private async Task<IReadOnlyList<RecentShiftRequestDto>> GetRecentShiftRequestsAsync(

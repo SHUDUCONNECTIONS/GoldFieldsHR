@@ -20,7 +20,7 @@ import { ReportsPage } from "./pages/ReportsPage";
 import { EmergencyPage } from "./pages/EmergencyPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CertificatesPage } from "./pages/CertificatesPage";
-import { PerformanceReviewsPage } from "./pages/PerformanceReviewsPage";
+import { KpiAppraisalsPage } from "./pages/KpiAppraisalsPage";
 import { ComingSoonPage } from "./pages/ComingSoonPage";
 import { NAV_ITEMS } from "./config/nav";
 
@@ -41,7 +41,7 @@ const BUILT_PATHS = new Set([
   "/settings",
   "/training",
   "/certificates",
-  "/performance",
+  "/kpi",
 ]);
 
 function App() {
@@ -70,7 +70,7 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/training" element={<CertificatesPage />} />
           <Route path="/certificates" element={<CertificatesPage />} />
-          <Route path="/performance" element={<PerformanceReviewsPage />} />
+          <Route path="/kpi" element={<KpiAppraisalsPage />} />
           {NAV_ITEMS.filter((item) => !BUILT_PATHS.has(item.path)).map(({ path, label }) => (
             <Route key={path} path={path} element={<ComingSoonPage title={label} />} />
           ))}

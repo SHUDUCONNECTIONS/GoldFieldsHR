@@ -16,8 +16,8 @@ using GoldFieldsHR.Application.Incidents;
 using GoldFieldsHR.Application.Leave;
 using GoldFieldsHR.Application.LegalAppointments;
 using GoldFieldsHR.Application.Medical;
+using GoldFieldsHR.Application.Kpi;
 using GoldFieldsHR.Application.Notifications;
-using GoldFieldsHR.Application.Performance;
 using GoldFieldsHR.Application.Policies;
 using GoldFieldsHR.Application.Ppe;
 using GoldFieldsHR.Application.Reports;
@@ -122,7 +122,7 @@ public static class DependencyInjection
         services.AddScoped<IAnnouncementService, Announcements.AnnouncementService>();
         services.AddScoped<IAccountService, Account.AccountService>();
         services.AddScoped<ICertificateService, Certificates.CertificateService>();
-        services.AddScoped<IPerformanceService, Performance.PerformanceService>();
+        services.AddScoped<IKpiService, Kpi.KpiService>();
         services.AddScoped<ITimesheetService, Timesheet.TimesheetService>();
         services.AddScoped<IWorkShiftService, WorkShift.WorkShiftService>();
         services.AddScoped<IPostedScheduleDocumentService, WorkShift.PostedScheduleDocumentService>();

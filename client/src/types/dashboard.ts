@@ -14,6 +14,6 @@ export interface DashboardSummary {
   incidentsThisMonth: number;
   medicalCompliancePercent: number | null;
   trainingCompliancePercent: number | null;
-  myAveragePerformanceScore: number | null;
+  myKpiOverallScorePercent: number | null;
   recentShiftRequests: RecentShiftRequest[];
 }

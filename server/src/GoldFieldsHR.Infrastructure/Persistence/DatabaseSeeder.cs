@@ -19,6 +19,20 @@ public static class DatabaseSeeder
         var site = await SeedDefaultSiteAsync(services);
         await SeedBootstrapAccountAsync(services, site, "hr.admin@goldfieldshr.local", "HR-ADMIN-001", EmployeeRole.HR);
         await SeedBootstrapAccountAsync(services, site, "exec.admin@goldfieldshr.local", "EXEC-ADMIN-001", EmployeeRole.Executive);
+        await SeedKpiTemplatesAsync(services);
+    }
+
+    private static async Task SeedKpiTemplatesAsync(IServiceProvider services)
+    {
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+
+        if (await dbContext.KpiTemplates.AnyAsync())
+        {
+            return;
+        }
+
+        dbContext.KpiTemplates.AddRange(Kpi.KpiTemplateSeedData.BuildTemplates());
+        await dbContext.SaveChangesAsync();
     }
 
     private static async Task SeedRolesAsync(IServiceProvider services)

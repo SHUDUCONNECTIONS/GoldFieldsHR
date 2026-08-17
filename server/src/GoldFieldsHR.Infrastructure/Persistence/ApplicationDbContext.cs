@@ -34,6 +34,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Board> Boards => Set<Board>();
     public DbSet<BoardMember> BoardMembers => Set<BoardMember>();
     public DbSet<BoardTask> BoardTasks => Set<BoardTask>();
+    public DbSet<KpiTemplate> KpiTemplates => Set<KpiTemplate>();
+    public DbSet<KpiTemplateCategory> KpiTemplateCategories => Set<KpiTemplateCategory>();
+    public DbSet<KpiTemplateItem> KpiTemplateItems => Set<KpiTemplateItem>();
+    public DbSet<KpiAppraisal> KpiAppraisals => Set<KpiAppraisal>();
+    public DbSet<KpiAppraisalItem> KpiAppraisalItems => Set<KpiAppraisalItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

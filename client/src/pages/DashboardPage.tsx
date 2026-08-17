@@ -45,7 +45,7 @@ export function DashboardPage() {
   const medicalPercent = useCountUp(summary?.medicalCompliancePercent ?? null, 1);
   const trainingPercent = useCountUp(summary?.trainingCompliancePercent ?? null, 1);
   const pendingLeave = useCountUp(summary ? summary.pendingLeaveCount : null);
-  const performanceScore = useCountUp(summary?.myAveragePerformanceScore ?? null, 1);
+  const kpiScore = useCountUp(summary?.myKpiOverallScorePercent ?? null, 1);
 
   return (
     <div className="stagger-children flex flex-col gap-6">
@@ -95,9 +95,9 @@ export function DashboardPage() {
           tone={summary && summary.pendingLeaveCount > 0 ? "warning" : "default"}
         />
         <StatCard
-          label="Performance"
-          value={performanceScore !== null ? `${performanceScore} / 5` : "—"}
-          detail={summary ? "Your average review score" : loadingDetail}
+          label="KPI Score"
+          value={formatPercent(kpiScore)}
+          detail={summary ? "Your latest KPI appraisal" : loadingDetail}
           icon={TrendingUp}
           iconTone="blue"
         />

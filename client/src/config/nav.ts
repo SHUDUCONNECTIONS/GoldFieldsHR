@@ -49,7 +49,7 @@ export const NAV_ITEMS: NavItem[] = [
   { path: "/emergency", label: "Emergency (SOS)", icon: Siren, category: "Safety & Compliance" },
   { path: "/medical", label: "Medical", icon: HeartPulse, category: "People & Development" },
   { path: "/training", label: "Training & Certifications", icon: GraduationCap, category: "People & Development" },
-  { path: "/performance", label: "Performance (KPI)", icon: TrendingUp, category: "People & Development" },
+  { path: "/kpi", label: "KPI Appraisals", icon: TrendingUp, category: "People & Development" },
   { path: "/certificates", label: "My Certificates", icon: Award, category: "People & Development" },
   { path: "/policies", label: "Policies & Documents", icon: FileText, category: "Admin & Info" },
   { path: "/announcements", label: "Announcements", icon: Megaphone, category: "Admin & Info" },
