@@ -22,5 +22,6 @@ public class ReviewLeaveRequestValidator : AbstractValidator<ReviewLeaveRequest>
     public ReviewLeaveRequestValidator()
     {
         RuleFor(x => x.RejectionReason).MaximumLength(1000);
+        RuleFor(x => x.SignaturePngBase64).MaximumLength(2_000_000);
     }
 }

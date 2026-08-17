@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown, LogOut, X } from "lucide-react";
 import { NAV_GROUPS, NAV_ITEMS, type NavItem } from "../../config/nav";
 import { useAuth } from "../../auth/AuthContext";
-import { EmployeeRoleLabels } from "../../types/auth";
-import ramsLogo from "../../assets/rams-logo.png";
+import { EmployeeRoleLabels, type EmployeeRole } from "../../types/auth";
+import ramsLogo from "../../assets/rams-logo-gold.png";
+
+function isVisibleToRole(item: NavItem, role: EmployeeRole | undefined): boolean {
+  return !item.roles || (role !== undefined && item.roles.includes(role));
+}
 
 interface SidebarProps {
   isOpen: boolean;
@@ -19,9 +23,9 @@ function NavItemLink({ path, label, icon: Icon, badge, onNavigate }: NavItem & {
         end={path === "/"}
         onClick={onNavigate}
         className={({ isActive }) =>
-          `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors ${
+          `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
             isActive
-              ? "bg-red-500/10 text-red-300"
+              ? "bg-yellow-500 text-white shadow-sm"
               : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"
           }`
         }
@@ -29,7 +33,7 @@ function NavItemLink({ path, label, icon: Icon, badge, onNavigate }: NavItem & {
         <Icon className="h-4 w-4 shrink-0" />
         <span className="flex-1">{label}</span>
         {badge && (
-          <span className="rounded bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+          <span className="rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-900">
             {badge}
           </span>
         )}
@@ -42,20 +46,29 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
   const { session, signOut } = useAuth();
   const location = useLocation();
 
+  const visibleGroups = useMemo(
+    () =>
+      NAV_GROUPS.map((group) => ({
+        ...group,
+        items: group.items.filter((item) => isVisibleToRole(item, session?.role)),
+      })).filter((group) => group.items.length > 0),
+    [session?.role],
+  );
+
   // Only one group open at a time (accordion), defaulting to whichever group
   // contains the current route. This keeps the sidebar's height bounded to
   // "header + item + 4 group labels + one group's items + footer" no matter
   // how many nav items exist, so it never needs to scroll.
   const [openGroup, setOpenGroup] = useState<string | null>(
-    () => NAV_GROUPS.find((group) => group.items.some((item) => item.path === location.pathname))?.label ?? null,
+    () => visibleGroups.find((group) => group.items.some((item) => item.path === location.pathname))?.label ?? null,
   );
 
   useEffect(() => {
-    const activeGroup = NAV_GROUPS.find((group) => group.items.some((item) => item.path === location.pathname));
+    const activeGroup = visibleGroups.find((group) => group.items.some((item) => item.path === location.pathname));
     if (activeGroup) {
       setOpenGroup(activeGroup.label);
     }
-  }, [location.pathname]);
+  }, [location.pathname, visibleGroups]);
 
   const dashboardItem = NAV_ITEMS.find((item) => item.path === "/")!;
 
@@ -70,10 +83,8 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
       }`}
     >
       <div className="relative flex items-center gap-2 border-b border-slate-800 px-4 py-4">
-        <div className="rounded-md bg-white px-2 py-1.5 shadow-[0_0_16px_-2px_rgba(225,29,72,0.55)]">
-          <img src={ramsLogo} alt="Rams Mining Technologies" className="h-6 w-auto" />
-        </div>
-        <p className="text-xs leading-tight text-red-400">Engineering the Future of Mining.</p>
+        <img src={ramsLogo} alt="Rams Mining Technologies" className="h-9 w-auto drop-shadow-[0_0_12px_rgba(234,179,8,0.35)]" />
+        <p className="text-xs leading-tight text-yellow-400">Engineering the Future of Mining.</p>
         <button
           type="button"
           onClick={onNavigate}
@@ -89,7 +100,7 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
           <NavItemLink {...dashboardItem} onNavigate={onNavigate} />
         </ul>
 
-        {NAV_GROUPS.map((group) => {
+        {visibleGroups.map((group) => {
           const isOpenGroup = openGroup === group.label;
           return (
             <div key={group.label} className="mt-3">

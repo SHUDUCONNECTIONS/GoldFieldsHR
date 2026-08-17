@@ -13,9 +13,10 @@ Reference design: [docs/mockup.jpeg](docs/mockup.jpeg)
 ## Project structure
 
 ```
-server/   ASP.NET Core solution (Api / Application / Domain / Infrastructure)
-client/   React + TypeScript web portal
-docs/     Reference materials
+server/                        ASP.NET Core solution (Api / Application / Domain / Infrastructure)
+server/ClockingReportParser/   Python service the Timesheet page's clocking-report parser calls
+client/                        React + TypeScript web portal
+docs/                          Reference materials
 ```
 
 ## Local development setup
@@ -25,6 +26,7 @@ docs/     Reference materials
 - .NET 9 SDK
 - Node.js 20+
 - PostgreSQL 16+ (running locally, database `goldfields_hr_dev`)
+- Python 3.12+ (only needed for the clocking-report parser — see below)
 
 ### Backend
 
@@ -73,6 +75,18 @@ Runs both backend test projects:
 - **`GoldFieldsHR.Infrastructure.Tests`** — unit tests for the Application/Infrastructure service layer against an EF Core in-memory database, covering workflow state machines and validation rules (Auth, Policies, Incidents, Performance, PPE, Legal Appointments, Emergency, Medical, Certificates, Sites, Notifications, Attachments, Timesheet, Employees).
 - **`GoldFieldsHR.Api.Tests`** — integration tests hosting the real API pipeline via `WebApplicationFactory` (EF InMemory swapped in for Postgres), covering CORS, rate limiting, the FluentValidation action filter, and the global exception handler end-to-end through actual HTTP requests — regression coverage for the middleware pipeline itself, not just the service layer.
 
+### Clocking report parser service
+
+The Timesheet page's HR-only "Clocking report parser" (upload an Individual Clocking History PDF from the site's turnstile system, download a formatted Timesheet workbook) is a Python FastAPI service the API proxies to — not reimplemented in C#, since the PDF layout parsing and overtime/rotating-shift business rules are non-trivial and already working. `GoldFieldsHR.Api.Controllers.TimesheetController`'s `POST /api/timesheet/clocking-report-parser` forwards the upload to it over HTTP (`ClockingParser:BaseUrl`, default `http://localhost:8010`); it has no auth of its own, so it must never be reachable from outside the deployment.
+
+```
+cd server/ClockingReportParser
+pip install -r requirements.txt
+uvicorn main:app --port 8010
+```
+
+Runs alongside the .NET API and Postgres — start it before (or alongside) `dotnet run` if you want the parser panel to work locally. Everything else on the Timesheet page works without it.
+
 ### Frontend
 
 ```
@@ -108,17 +122,17 @@ Playwright specs under `client/e2e/` cover login (valid/invalid credentials, log
 docker compose up --build
 ```
 
-Starts Postgres, the API (`http://localhost:5167`), and the web portal behind nginx (`http://localhost:5173`) as three containers. The API auto-applies EF Core migrations and seeds roles/site/bootstrap accounts on startup (same seeded accounts as above), so a fresh `docker compose up` needs no manual migration step.
+Starts Postgres, the clocking report parser, the API (`http://localhost:5167`), and the web portal behind nginx (`http://localhost:5173`) as four containers. The API auto-applies EF Core migrations and seeds roles/site/bootstrap accounts on startup (same seeded accounts as above), so a fresh `docker compose up` needs no manual migration step.
 
 This compose file is for local use only, not a production deployment: it runs the API in the `Development` environment (Swagger enabled, verbose EF logging), uses a hardcoded `Jwt__Key` and Postgres password defined directly in `docker-compose.yml`, and serves everything over plain HTTP. Replace those before deploying anywhere real.
 
 ### Deploying to Render (shared testing URL)
 
-`render.yaml` at the repo root is a [Render Blueprint](https://render.com/docs/blueprint-spec) that provisions the whole stack — Postgres, the API, and the frontend — from this repo in one go, so people other than you can reach the app over the internet instead of just `localhost`.
+`render.yaml` at the repo root is a [Render Blueprint](https://render.com/docs/blueprint-spec) that provisions the whole stack — Postgres, the clocking report parser, the API, and the frontend — from this repo in one go, so people other than you can reach the app over the internet instead of just `localhost`.
 
 1. Push this repo to GitHub (Render deploys from a Git remote, not a local working copy).
-2. In the [Render dashboard](https://dashboard.render.com), click **New +** -> **Blueprint** and point it at the repo. Render reads `render.yaml` and shows a preview of the 3 resources it's about to create (`goldfields-hr-db`, `goldfields-hr-api`, `goldfields-hr-client`) — click **Apply**.
-3. First deploy takes a few minutes (Postgres provisioning + two Docker/npm builds). Once the API service is live, open its **Logs** tab and confirm you see `Applying migration...` and no seeding errors — that means the bootstrap accounts below now exist on the live database.
+2. In the [Render dashboard](https://dashboard.render.com), click **New +** -> **Blueprint** and point it at the repo. Render reads `render.yaml` and shows a preview of the 4 resources it's about to create (`goldfields-hr-db`, `goldfields-hr-clocking-parser`, `goldfields-hr-api`, `goldfields-hr-client`) — click **Apply**. `goldfields-hr-clocking-parser` is a private service (no public URL) — it has no auth of its own, so it must only ever be reachable from `goldfields-hr-api` over Render's internal network, never from the internet.
+3. First deploy takes a few minutes (Postgres provisioning + three Docker/npm builds). Once the API service is live, open its **Logs** tab and confirm you see `Applying migration...` and no seeding errors — that means the bootstrap accounts below now exist on the live database.
 4. Open the client service's URL (shown on its dashboard page, `https://goldfields-hr-client.onrender.com` unless the name was suffixed — see step 5) and sign in with the same bootstrap credentials as local dev:
 
    | Email | Password | Role |
@@ -139,6 +153,9 @@ Free-tier caveats — fine for testing, revisit before treating this as a real d
 ## Modules
 
 All sidebar modules are implemented end-to-end (backend + frontend): Dashboard, Timesheet, Work Shift, Leave Management, Safety & FLRA, Incidents & Near Miss, Policies & Documents, Medical, Training & Certifications, PPE Management, Legal Appointments, Performance (KPI), My Certificates, Reports & Analytics, Emergency (SOS), Settings.
+
+- **Timesheet** has no self-service clock-in/out — attendance comes from the site's turnstile system. HR uploads that system's Individual Clocking History PDF via the "Clocking report parser" panel and downloads a formatted Timesheet workbook (see "Clocking report parser service" above); parsed shifts aren't imported back into this app's own Timesheet History.
+- **Work Shift**'s "Post a schedule" is a document upload (HR posts a title + attaches the roster as a PDF/image for everyone to view/download), not an in-app roster builder.
 
 Known simplifications:
 - Work Shift / Leave approvals surface a Line Manager's direct reports first (via `Employee.ManagerId`, set at registration or reassigned by HR in the Settings > Employee directory), but any Line Manager can still see and approve any pending request site-wide as a fallback — there is no hard restriction to direct reports only.

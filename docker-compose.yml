@@ -15,6 +15,12 @@ services:
       timeout: 5s
       retries: 10
 
+  clocking-parser:
+    build:
+      context: ./server/ClockingReportParser
+    ports:
+      - "8010:8010"
+
   api:
     build:
       context: ./server
@@ -26,11 +32,14 @@ services:
       Jwt__Issuer: GoldFieldsHR
       Jwt__Audience: GoldFieldsHR.Client
       Jwt__ExpiryMinutes: "60"
+      ClockingParser__BaseUrl: "http://clocking-parser:8010"
     ports:
       - "5167:8080"
     depends_on:
       postgres:
         condition: service_healthy
+      clocking-parser:
+        condition: service_started
 
   client:
     build:

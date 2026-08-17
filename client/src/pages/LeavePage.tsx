@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { getSignature } from "../api/account";
+import { uploadAttachment } from "../api/attachments";
 import { extractErrorMessage } from "../api/client";
 import {
+  downloadSignedLeaveDocument,
   getMyLeaveRequests,
-  getPendingLeaveApprovals,
-  reviewLeaveRequest,
+  getPendingHRApprovals,
+  getPendingLineManagerApprovals,
+  hrReview,
+  lineManagerReview,
   submitLeaveRequest,
 } from "../api/leave";
 import { AttachmentsPanel } from "../components/AttachmentsPanel";
@@ -16,6 +21,7 @@ import { AttachmentEntityType } from "../types/attachment";
 import { EmployeeRole } from "../types/auth";
 import {
   LEAVE_TYPES_REQUIRING_CERTIFICATE,
+  LeaveRequestStatus,
   LeaveType,
   LeaveTypeLabels,
   type LeaveRequestDto,
@@ -41,34 +47,61 @@ const initialForm: LeaveRequestForm = {
 export function LeavePage() {
   const { session } = useAuth();
   const isLineManager = session?.role === EmployeeRole.LineManager;
+  const isHR = session?.role === EmployeeRole.HR;
 
   const [myRequests, setMyRequests] = useState<LeaveRequestDto[]>([]);
-  const [pendingQueue, setPendingQueue] = useState<LeaveRequestDto[]>([]);
+  const [lineManagerQueue, setLineManagerQueue] = useState<LeaveRequestDto[]>([]);
+  const [hrQueue, setHrQueue] = useState<LeaveRequestDto[]>([]);
   const [form, setForm] = useState(initialForm);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
+  const [hasSavedSignature, setHasSavedSignature] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadAll = useCallback(async () => {
     try {
       const requests: Promise<unknown>[] = [getMyLeaveRequests().then(setMyRequests)];
-      if (isLineManager) requests.push(getPendingLeaveApprovals().then(setPendingQueue));
+      if (isLineManager) requests.push(getPendingLineManagerApprovals().then(setLineManagerQueue));
+      if (isHR) requests.push(getPendingHRApprovals().then(setHrQueue));
       await Promise.all(requests);
     } catch (err) {
       setError(extractErrorMessage(err));
     }
-  }, [isLineManager]);
+  }, [isLineManager, isHR]);
 
   useEffect(() => {
     loadAll();
   }, [loadAll]);
 
+  useEffect(() => {
+    getSignature()
+      .then((signature) => setHasSavedSignature(signature.hasSignature))
+      .catch(() => {
+        // Assume a signature exists so the pad doesn't flash in for the common case.
+      });
+  }, []);
+
   async function handleSubmit() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await submitLeaveRequest(form);
+      const request = await submitLeaveRequest(form);
+      if (attachmentFile) {
+        try {
+          await uploadAttachment(AttachmentEntityType.LeaveRequest, request.id, attachmentFile);
+        } catch (err) {
+          setError(
+            `The leave request was submitted, but the attachment failed to upload: ${extractErrorMessage(err)}. Attach it below.`,
+          );
+          await loadAll();
+          return;
+        }
+      }
       setForm(initialForm);
+      setAttachmentFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -88,7 +121,7 @@ export function LeavePage() {
             <select
               value={form.leaveType}
               onChange={(e) => setForm((prev) => ({ ...prev, leaveType: Number(e.target.value) as LeaveType }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             >
               {Object.entries(LeaveTypeLabels).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -97,7 +130,7 @@ export function LeavePage() {
               ))}
             </select>
             {LEAVE_TYPES_REQUIRING_CERTIFICATE.includes(form.leaveType) && (
-              <span className="text-xs text-amber-600">Attach a medical certificate below after submitting.</span>
+              <span className="text-xs text-amber-600">Attach a medical certificate on the next step.</span>
             )}
           </label>
 
@@ -108,7 +141,7 @@ export function LeavePage() {
               required
               value={form.startDate}
               onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -119,7 +152,7 @@ export function LeavePage() {
               required
               value={form.endDate}
               onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </div>
@@ -136,7 +169,7 @@ export function LeavePage() {
               required
               value={form.reason}
               onChange={(e) => setForm((prev) => ({ ...prev, reason: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -148,7 +181,18 @@ export function LeavePage() {
               value={form.contactNumber}
               onChange={(e) => setForm((prev) => ({ ...prev, contactNumber: sanitizePhoneNumber(e.target.value) }))}
               placeholder="e.g. 082 000 0000"
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Attachment (optional{LEAVE_TYPES_REQUIRING_CERTIFICATE.includes(form.leaveType) ? " — medical certificate" : ""})
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-slate-700 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -161,10 +205,11 @@ export function LeavePage() {
     },
   ];
 
-  async function handleApprove(id: string) {
+  async function handleLineManagerApprove(id: string, signaturePngBase64?: string) {
     setIsReviewing(true);
     try {
-      await reviewLeaveRequest(id, { approve: true });
+      await lineManagerReview(id, { approve: true, signaturePngBase64 });
+      setHasSavedSignature(true);
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -173,15 +218,48 @@ export function LeavePage() {
     }
   }
 
-  async function handleReject(id: string, reason: string) {
+  async function handleLineManagerReject(id: string, reason: string) {
     setIsReviewing(true);
     try {
-      await reviewLeaveRequest(id, { approve: false, rejectionReason: reason || undefined });
+      await lineManagerReview(id, { approve: false, rejectionReason: reason || undefined });
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
       setIsReviewing(false);
+    }
+  }
+
+  async function handleHRApprove(id: string, signaturePngBase64?: string) {
+    setIsReviewing(true);
+    try {
+      await hrReview(id, { approve: true, signaturePngBase64 });
+      setHasSavedSignature(true);
+      await loadAll();
+    } catch (err) {
+      setError(extractErrorMessage(err));
+    } finally {
+      setIsReviewing(false);
+    }
+  }
+
+  async function handleHRReject(id: string, reason: string) {
+    setIsReviewing(true);
+    try {
+      await hrReview(id, { approve: false, rejectionReason: reason || undefined });
+      await loadAll();
+    } catch (err) {
+      setError(extractErrorMessage(err));
+    } finally {
+      setIsReviewing(false);
+    }
+  }
+
+  async function handleDownloadSignedDocument(request: LeaveRequestDto) {
+    try {
+      await downloadSignedLeaveDocument(request.id, `leave-request-${request.employeeName}-${request.startDate}.pdf`);
+    } catch (err) {
+      setError(extractErrorMessage(err));
     }
   }
 
@@ -189,10 +267,23 @@ export function LeavePage() {
     <div className="stagger-children flex flex-col gap-6">
       {isLineManager && (
         <LeaveApprovalQueue
-          items={pendingQueue}
+          title="Pending my approval (Line Manager)"
+          items={lineManagerQueue}
           isBusy={isReviewing}
-          onApprove={handleApprove}
-          onReject={handleReject}
+          hasSavedSignature={hasSavedSignature}
+          onApprove={handleLineManagerApprove}
+          onReject={handleLineManagerReject}
+        />
+      )}
+
+      {isHR && (
+        <LeaveApprovalQueue
+          title="Pending HR approval"
+          items={hrQueue}
+          isBusy={isReviewing}
+          hasSavedSignature={hasSavedSignature}
+          onApprove={handleHRApprove}
+          onReject={handleHRReject}
         />
       )}
 
@@ -235,6 +326,15 @@ export function LeavePage() {
                       <p className="mt-1 text-xs text-red-600">Rejection reason: {request.rejectionReason}</p>
                     )}
                   </div>
+                  {request.status === LeaveRequestStatus.Approved && (
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadSignedDocument(request)}
+                      className="text-xs font-medium text-yellow-700 hover:underline"
+                    >
+                      Download signed form
+                    </button>
+                  )}
                 </div>
 
                 <AttachmentsPanel entityType={AttachmentEntityType.LeaveRequest} entityId={request.id} canUpload />

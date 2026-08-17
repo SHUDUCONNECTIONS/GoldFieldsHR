@@ -2,8 +2,6 @@ using GoldFieldsHR.Domain.Enums;
 
 namespace GoldFieldsHR.Application.Dashboard;
 
-public record AttendanceSummaryDto(int PresentCount, int ActiveEmployeeCount, double PercentPresent);
-
 public record RecentShiftRequestDto(
     Guid Id,
     string EmployeeName,
@@ -13,7 +11,6 @@ public record RecentShiftRequestDto(
     DateTime CreatedAtUtc);
 
 public record DashboardSummaryDto(
-    AttendanceSummaryDto Attendance,
     int PendingLeaveCount,
     int IncidentsThisMonth,
     double? MedicalCompliancePercent,

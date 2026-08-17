@@ -57,7 +57,7 @@ export function AnnouncementsPage() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -67,14 +67,14 @@ export function AnnouncementsPage() {
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 rows={4}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-1 w-fit rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+              className="mt-1 w-fit rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
             >
               {isSubmitting ? "Posting..." : "Post"}
             </button>

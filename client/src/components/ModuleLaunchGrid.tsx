@@ -1,8 +1,15 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { NAV_ITEMS } from "../config/nav";
 
 export function ModuleLaunchGrid() {
-  const items = NAV_ITEMS.filter((item) => item.path !== "/" && item.path !== "/settings");
+  const { session } = useAuth();
+  const items = NAV_ITEMS.filter(
+    (item) =>
+      item.path !== "/" &&
+      item.path !== "/settings" &&
+      (!item.roles || (session && item.roles.includes(session.role))),
+  );
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -14,12 +21,12 @@ export function ModuleLaunchGrid() {
           <Link
             key={path}
             to={path}
-            className="group flex flex-col items-center gap-2 rounded-lg border border-slate-200 p-4 text-center transition-colors hover:border-red-300 hover:bg-red-50/60"
+            className="group flex flex-col items-center gap-2 rounded-lg border border-slate-200 p-4 text-center transition-colors hover:border-yellow-300 hover:bg-yellow-50/60"
           >
-            <span className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#f3efe4] to-[#e7dfc9] text-stone-700 transition-colors group-hover:from-red-100 group-hover:to-red-200 group-hover:text-red-700">
+            <span className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#f3efe4] to-[#e7dfc9] text-stone-700 transition-colors group-hover:from-yellow-100 group-hover:to-yellow-200 group-hover:text-yellow-700">
               <Icon className="h-5 w-5" />
               {badge && (
-                <span className="absolute -right-1.5 -top-1.5 rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white">
+                <span className="absolute -right-1.5 -top-1.5 rounded-full bg-yellow-500 px-1 text-[9px] font-semibold text-white">
                   {badge}
                 </span>
               )}

@@ -11,17 +11,10 @@ export interface IncidentSeverityCountDto {
   count: number;
 }
 
-export interface ReportsAttendanceDto {
-  presentCount: number;
-  activeEmployeeCount: number;
-  percentPresent: number;
-}
-
 export interface ReportsSummaryDto {
   totalEmployees: number;
   activeEmployees: number;
   headcountByRole: RoleHeadcountDto[];
-  attendanceToday: ReportsAttendanceDto;
   openIncidents: number;
   closedIncidents: number;
   openIncidentsBySeverity: IncidentSeverityCountDto[];

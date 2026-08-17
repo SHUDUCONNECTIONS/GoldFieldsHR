@@ -11,4 +11,6 @@ public class PolicyAcknowledgment
     public Employee? Employee { get; set; }
 
     public DateTime AcknowledgedAtUtc { get; set; } = DateTime.UtcNow;
+
+    public byte[] SignatureImageData { get; set; } = [];
 }

@@ -5,6 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { NotificationBell } from "../NotificationBell";
 import { HeaderSearch } from "../HeaderSearch";
 import { MailDropdown } from "../MailDropdown";
+import { PolicyAcknowledgmentPopup } from "../PolicyAcknowledgmentPopup";
 import { ProfileDropdown } from "../ProfileDropdown";
 import { NAV_ITEMS } from "../../config/nav";
 import { useAuth } from "../../auth/AuthContext";
@@ -19,6 +20,7 @@ export function AppShell() {
 
   return (
     <div className="bg-cream flex h-screen">
+      <PolicyAcknowledgmentPopup />
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-slate-950/60 lg:hidden"
@@ -28,7 +30,7 @@ export function AppShell() {
       )}
       <Sidebar isOpen={isSidebarOpen} onNavigate={() => setIsSidebarOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="relative flex items-center justify-between gap-2 border-b border-slate-200 bg-gradient-to-r from-white via-white to-red-50/40 px-3 py-3 shadow-[0_1px_0_0_rgba(225,29,72,0.12)] sm:gap-4 sm:px-6">
+        <header className="relative flex items-center justify-between gap-2 border-b border-slate-200 bg-gradient-to-r from-white via-white to-yellow-50/40 px-3 py-3 shadow-[0_1px_0_0_rgba(202,138,4,0.12)] sm:gap-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <button
               type="button"

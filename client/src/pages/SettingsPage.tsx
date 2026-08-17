@@ -1,11 +1,13 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "../auth/AuthContext";
-import { changePassword, getProfile } from "../api/account";
+import { changePassword, getProfile, getSignature, setSignature } from "../api/account";
 import { extractErrorMessage } from "../api/client";
 import { EmployeeDirectory } from "../components/EmployeeDirectory";
+import { SignaturePad, type SignaturePadHandle } from "../components/SignaturePad";
 import { SiteManagement } from "../components/SiteManagement";
+import { formatDateTime } from "../lib/format";
 import { EmployeeRole, EmployeeRoleLabels } from "../types/auth";
-import type { ProfileDto } from "../types/account";
+import type { ProfileDto, SignatureDto } from "../types/account";
 
 export function SettingsPage() {
   const { session } = useAuth();
@@ -22,11 +24,40 @@ export function SettingsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [signature, setSignatureState] = useState<SignatureDto | null>(null);
+  const [signatureError, setSignatureError] = useState<string | null>(null);
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
+  const signaturePadRef = useRef<SignaturePadHandle>(null);
+
   useEffect(() => {
     getProfile()
       .then(setProfile)
       .catch((err) => setProfileError(extractErrorMessage(err)));
+    getSignature()
+      .then(setSignatureState)
+      .catch(() => {
+        // Non-critical — the signature card just won't preload; the pad still works.
+      });
   }, []);
+
+  async function handleSaveSignature() {
+    const dataUrl = signaturePadRef.current?.getSignature();
+    if (!dataUrl) {
+      setSignatureError("Draw your signature first.");
+      return;
+    }
+    setSignatureError(null);
+    setIsSavingSignature(true);
+    try {
+      const updated = await setSignature({ signaturePngBase64: dataUrl });
+      setSignatureState(updated);
+      signaturePadRef.current?.clear();
+    } catch (err) {
+      setSignatureError(extractErrorMessage(err));
+    } finally {
+      setIsSavingSignature(false);
+    }
+  }
 
   async function handleChangePassword(event: FormEvent) {
     event.preventDefault();
@@ -57,7 +88,7 @@ export function SettingsPage() {
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-sm font-semibold text-slate-900">My profile</h3>
         {profileError ? (
-          <p className="text-sm text-red-600">{profileError}</p>
+          <p className="text-sm text-yellow-600">{profileError}</p>
         ) : !profile ? (
           <p className="text-sm text-slate-500">Loading...</p>
         ) : (
@@ -91,6 +122,38 @@ export function SettingsPage() {
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-1 text-sm font-semibold text-slate-900">My signature</h3>
+        <p className="mb-4 text-xs text-slate-500">
+          Used to sign policy acknowledgments and leave approvals. Draw it once here and it's reused automatically
+          — redraw and save any time to update it.
+        </p>
+
+        {signature?.hasSignature && (
+          <div className="mb-4 flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <img src={signature.signaturePngBase64!} alt="Your saved signature" className="h-12 w-auto" />
+            <p className="text-xs text-slate-500">
+              Saved {signature.updatedAtUtc ? formatDateTime(signature.updatedAtUtc) : ""}
+            </p>
+          </div>
+        )}
+
+        <div className="max-w-md">
+          <SignaturePad ref={signaturePadRef} height={140} />
+        </div>
+
+        {signatureError && <p className="mt-3 text-sm text-red-600">{signatureError}</p>}
+
+        <button
+          type="button"
+          onClick={handleSaveSignature}
+          disabled={isSavingSignature}
+          className="mt-3 w-fit rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
+        >
+          {isSavingSignature ? "Saving..." : signature?.hasSignature ? "Update signature" : "Save signature"}
+        </button>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-sm font-semibold text-slate-900">Change password</h3>
         <form onSubmit={handleChangePassword} className="flex max-w-sm flex-col gap-3">
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -100,7 +163,7 @@ export function SettingsPage() {
               required
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -111,7 +174,7 @@ export function SettingsPage() {
               minLength={8}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -122,7 +185,7 @@ export function SettingsPage() {
               minLength={8}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -132,7 +195,7 @@ export function SettingsPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-1 w-fit rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+            className="mt-1 w-fit rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
           >
             {isSubmitting ? "Changing..." : "Change password"}
           </button>

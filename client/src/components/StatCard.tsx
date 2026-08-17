@@ -16,7 +16,7 @@ const toneClasses: Record<NonNullable<StatCardProps["tone"]>, string> = {
 };
 
 // "blue" and "violet" are kept as neutral/warm tones rather than saturated
-// colors — red stays the app's one deliberate accent, so decorative (non-
+// colors — red is reserved for danger/alert stats, so decorative (non-
 // semantic) stat tiles stay muted while amber/emerald/red keep their meaning
 // (warning/good/danger).
 const iconToneClasses: Record<NonNullable<StatCardProps["iconTone"]>, string> = {

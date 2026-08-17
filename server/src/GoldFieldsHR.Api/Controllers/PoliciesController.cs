@@ -26,9 +26,9 @@ public class PoliciesController(IPolicyService policyService) : ControllerBase
     }
 
     [HttpPost("{id:guid}/acknowledge")]
-    public async Task<IActionResult> Acknowledge(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Acknowledge(Guid id, AcknowledgePolicyRequest request, CancellationToken cancellationToken)
     {
-        var result = await policyService.AcknowledgeAsync(id, User.GetEmployeeId(), cancellationToken);
+        var result = await policyService.AcknowledgeAsync(id, User.GetEmployeeId(), request, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
@@ -38,5 +38,20 @@ public class PoliciesController(IPolicyService policyService) : ControllerBase
     {
         var acknowledgments = await policyService.GetAcknowledgmentsAsync(id, cancellationToken);
         return Ok(acknowledgments);
+    }
+
+    [Authorize(Roles = "HR")]
+    [HttpGet("{id:guid}/acknowledgments/{employeeId:guid}/attachments/{attachmentId:guid}/signed")]
+    public async Task<IActionResult> DownloadSignedAttachment(
+        Guid id, Guid employeeId, Guid attachmentId, CancellationToken cancellationToken)
+    {
+        var result = await policyService.DownloadSignedAttachmentAsync(
+            id, employeeId, attachmentId, User.GetEmployeeId(), cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return File(result.Value!.Content, result.Value.ContentType, result.Value.FileName);
     }
 }

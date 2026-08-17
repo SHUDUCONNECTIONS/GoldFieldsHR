@@ -10,6 +10,11 @@ server/**/logs/
 appsettings.Development.json
 appsettings.Local.json
 
+# Python (server/ClockingReportParser)
+server/ClockingReportParser/__pycache__/
+server/ClockingReportParser/.venv/
+*.pyc
+
 # Node / React
 client/node_modules/
 client/dist/

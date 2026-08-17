@@ -72,8 +72,15 @@ apiClient.interceptors.response.use(
 
 export function extractErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const errors = error.response?.data?.errors as string[] | undefined;
-    if (errors?.length) return errors.join(" ");
+    const errors = error.response?.data?.errors as string[] | Record<string, string[]> | undefined;
+    if (Array.isArray(errors)) {
+      if (errors.length) return errors.join(" ");
+    } else if (errors && typeof errors === "object") {
+      // ASP.NET Core's ValidationProblemDetails shape (from FluentValidation failures):
+      // { errors: { [fieldName]: string[] } } rather than a flat array.
+      const messages = Object.values(errors).flat();
+      if (messages.length) return messages.join(" ");
+    }
     const singleError = error.response?.data?.error as string | undefined;
     if (singleError) return singleError;
     if (error.message) return error.message;

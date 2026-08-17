@@ -18,6 +18,7 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
+import { EmployeeRole } from "../types/auth";
 
 export interface NavItem {
   path: string;
@@ -25,11 +26,20 @@ export interface NavItem {
   icon: LucideIcon;
   badge?: string;
   category?: string;
+  /** Omit to show to every role — set to restrict visibility (e.g. Timesheet). */
+  roles?: EmployeeRole[];
 }
 
 export const NAV_ITEMS: NavItem[] = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/timesheet", label: "Timesheet", icon: Clock, category: "Time & Leave" },
+  {
+    path: "/timesheet",
+    label: "Timesheet",
+    icon: Clock,
+    category: "Time & Leave",
+    // Only the clocking report parser lives here now — HR only.
+    roles: [EmployeeRole.HR],
+  },
   { path: "/work-shift", label: "Work Shift", icon: CalendarClock, badge: "NEW", category: "Time & Leave" },
   { path: "/leave", label: "Leave Management", icon: CalendarOff, category: "Time & Leave" },
   { path: "/safety-flra", label: "Safety & FLRA", icon: ShieldCheck, category: "Safety & Compliance" },

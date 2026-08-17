@@ -9,7 +9,7 @@ public record SubmitLeaveRequest(
     string Reason,
     string ContactNumber);
 
-public record ReviewLeaveRequest(bool Approve, string? RejectionReason);
+public record ReviewLeaveRequest(bool Approve, string? RejectionReason, string? SignaturePngBase64);
 
 public record LeaveRequestDto(
     Guid Id,
@@ -23,6 +23,7 @@ public record LeaveRequestDto(
     string ContactNumber,
     LeaveRequestStatus Status,
     DateTime CreatedAtUtc,
-    DateTime? ReviewedAtUtc,
+    DateTime? LineManagerReviewedAtUtc,
+    DateTime? HRReviewedAtUtc,
     string? RejectionReason,
     bool IsDirectReport);

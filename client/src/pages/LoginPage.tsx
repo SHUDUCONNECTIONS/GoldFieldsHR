@@ -35,7 +35,7 @@ export function LoginPage() {
         <span className="blob-bl" />
       </div>
       <div className="fade-in-up relative z-10 w-full max-w-sm overflow-hidden rounded-2xl bg-white p-8 shadow-xl">
-        <span className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-red-500 via-red-600 to-slate-900" />
+        <span className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-yellow-500 via-yellow-600 to-slate-900" />
         <div className="mb-6 flex items-center gap-2">
           <img src={ramsLogo} alt="Rams Mining Technologies" className="h-9 w-auto" />
           <p className="text-xs text-slate-500">Engineering the Future of Mining.</p>
@@ -51,7 +51,7 @@ export function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -62,11 +62,11 @@ export function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
-          <Link to="/forgot-password" className="self-end text-xs font-medium text-red-600 hover:underline">
+          <Link to="/forgot-password" className="self-end text-xs font-medium text-yellow-600 hover:underline">
             Forgot password?
           </Link>
 
@@ -75,7 +75,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-2 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+            className="mt-2 rounded-md bg-yellow-600 px-3 py-2 text-sm font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
           >
             {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
@@ -83,7 +83,7 @@ export function LoginPage() {
 
         <p className="mt-4 text-center text-sm text-slate-500">
           No account?{" "}
-          <Link to="/register" className="font-medium text-red-600 hover:underline">
+          <Link to="/register" className="font-medium text-yellow-600 hover:underline">
             Register
           </Link>
         </p>

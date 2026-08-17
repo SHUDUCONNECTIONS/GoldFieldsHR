@@ -20,6 +20,15 @@ databases:
     user: goldfields_app
 
 services:
+  # Private service (no public URL, no auth of its own) — only reachable from
+  # goldfields-hr-api over Render's internal network at http://<name>:8010.
+  - type: pserv
+    name: goldfields-hr-clocking-parser
+    runtime: docker
+    plan: free
+    dockerfilePath: ./server/ClockingReportParser/Dockerfile
+    dockerContext: ./server/ClockingReportParser
+
   - type: web
     name: goldfields-hr-api
     runtime: docker
@@ -47,6 +56,8 @@ services:
       # confirm the actual URL after first deploy and update this if it differs.
       - key: Cors__AllowedOrigins__0
         value: https://goldfields-hr-client.onrender.com
+      - key: ClockingParser__BaseUrl
+        value: http://goldfields-hr-clocking-parser:8010
 
   - type: web
     name: goldfields-hr-client

@@ -10,9 +10,18 @@ public interface ILeaveService
     Task<IReadOnlyList<LeaveRequestDto>> GetMyRequestsAsync(
         Guid employeeId, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<LeaveRequestDto>> GetPendingApprovalsAsync(
+    Task<IReadOnlyList<LeaveRequestDto>> GetPendingLineManagerApprovalsAsync(
         Guid reviewerId, CancellationToken cancellationToken = default);
 
-    Task<Result<LeaveRequestDto>> ReviewAsync(
+    Task<IReadOnlyList<LeaveRequestDto>> GetPendingHRApprovalsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<Result<LeaveRequestDto>> LineManagerReviewAsync(
         Guid requestId, Guid reviewerId, ReviewLeaveRequest review, CancellationToken cancellationToken = default);
+
+    Task<Result<LeaveRequestDto>> HRReviewAsync(
+        Guid requestId, Guid reviewerId, ReviewLeaveRequest review, CancellationToken cancellationToken = default);
+
+    Task<Result<byte[]>> GenerateSignedDocumentAsync(
+        Guid requestId, Guid requesterId, CancellationToken cancellationToken = default);
 }

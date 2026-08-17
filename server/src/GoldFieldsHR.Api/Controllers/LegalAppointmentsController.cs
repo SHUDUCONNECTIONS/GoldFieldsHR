@@ -24,7 +24,7 @@ public class LegalAppointmentsController(ILegalAppointmentService legalAppointme
         return Ok(appointments);
     }
 
-    [Authorize(Roles = "SafetyOfficer")]
+    [Authorize(Roles = "SafetyOfficer,HR,Executive")]
     [HttpGet("pending")]
     public async Task<IActionResult> GetPending(CancellationToken cancellationToken)
     {
@@ -32,7 +32,7 @@ public class LegalAppointmentsController(ILegalAppointmentService legalAppointme
         return Ok(appointments);
     }
 
-    [Authorize(Roles = "SafetyOfficer")]
+    [Authorize(Roles = "SafetyOfficer,HR,Executive")]
     [HttpGet("active")]
     public async Task<IActionResult> GetActive(CancellationToken cancellationToken)
     {

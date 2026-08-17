@@ -24,7 +24,7 @@ public class IncidentsController(IIncidentService incidentService) : ControllerB
         return Ok(reports);
     }
 
-    [Authorize(Roles = "SafetyOfficer")]
+    [Authorize(Roles = "SafetyOfficer,HR,Executive")]
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {

@@ -14,3 +14,13 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
+
+export interface SignatureDto {
+  hasSignature: boolean;
+  signaturePngBase64: string | null;
+  updatedAtUtc: string | null;
+}
+
+export interface SetSignatureRequest {
+  signaturePngBase64: string;
+}

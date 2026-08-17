@@ -29,7 +29,7 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
 
         builder.Property(r => r.Status)
             .HasConversion<string>()
-            .HasMaxLength(20);
+            .HasMaxLength(30);
 
         builder.HasOne(r => r.Employee)
             .WithMany()

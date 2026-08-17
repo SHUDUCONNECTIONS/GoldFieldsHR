@@ -7,14 +7,19 @@ import {
   getTodaysPreShiftCheck,
   submitPreShiftCheck,
 } from "../api/safety";
+import { AcknowledgmentPanel } from "../components/AcknowledgmentPanel";
 import { Badge } from "../components/Badge";
 import { formatDate, formatDateTime } from "../lib/format";
+import { AcknowledgmentEntityType } from "../types/acknowledgment";
 import { EmployeeRole } from "../types/auth";
 import type { PreShiftSafetyCheck } from "../types/safety";
 
 export function SafetyPage() {
   const { session } = useAuth();
   const isSafetyOfficer = session?.role === EmployeeRole.SafetyOfficer;
+  const isHR = session?.role === EmployeeRole.HR;
+  const isExecutive = session?.role === EmployeeRole.Executive;
+  const canViewHazards = isSafetyOfficer || isHR || isExecutive;
 
   const [today, setToday] = useState<PreShiftSafetyCheck | null | undefined>(undefined);
   const [history, setHistory] = useState<PreShiftSafetyCheck[]>([]);
@@ -30,12 +35,12 @@ export function SafetyPage() {
         getTodaysPreShiftCheck().then(setToday),
         getPreShiftCheckHistory().then(setHistory),
       ];
-      if (isSafetyOfficer) requests.push(getTodaysHazards().then(setHazardsToday));
+      if (canViewHazards) requests.push(getTodaysHazards().then(setHazardsToday));
       await Promise.all(requests);
     } catch (err) {
       setError(extractErrorMessage(err));
     }
-  }, [isSafetyOfficer]);
+  }, [canViewHazards]);
 
   useEffect(() => {
     loadAll();
@@ -61,7 +66,7 @@ export function SafetyPage() {
 
   return (
     <div className="stagger-children flex flex-col gap-6">
-      {isSafetyOfficer && (
+      {canViewHazards && (
         <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-6 py-4">
             <h3 className="text-sm font-semibold text-slate-900">Today's flagged hazards</h3>
@@ -76,6 +81,7 @@ export function SafetyPage() {
                   <p className="mt-1 text-xs text-slate-500">
                     {item.hazardNotes || "No details provided"} — {formatDateTime(item.submittedAtUtc)}
                   </p>
+                  <AcknowledgmentPanel entityType={AcknowledgmentEntityType.PreShiftSafetyCheck} entityId={item.id} />
                 </li>
               ))}
             </ul>
@@ -128,7 +134,7 @@ export function SafetyPage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
 
@@ -137,7 +143,7 @@ export function SafetyPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-1 w-fit rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+              className="mt-1 w-fit rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
             >
               {isSubmitting ? "Submitting..." : "Submit check"}
             </button>

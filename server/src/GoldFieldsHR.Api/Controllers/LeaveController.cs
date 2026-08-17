@@ -25,18 +25,46 @@ public class LeaveController(ILeaveService leaveService) : ControllerBase
     }
 
     [Authorize(Roles = "LineManager")]
-    [HttpGet("pending")]
-    public async Task<IActionResult> GetPending(CancellationToken cancellationToken)
+    [HttpGet("pending/line-manager")]
+    public async Task<IActionResult> GetPendingLineManagerApprovals(CancellationToken cancellationToken)
     {
-        var requests = await leaveService.GetPendingApprovalsAsync(User.GetEmployeeId(), cancellationToken);
+        var requests = await leaveService.GetPendingLineManagerApprovalsAsync(User.GetEmployeeId(), cancellationToken);
+        return Ok(requests);
+    }
+
+    [Authorize(Roles = "HR")]
+    [HttpGet("pending/hr")]
+    public async Task<IActionResult> GetPendingHRApprovals(CancellationToken cancellationToken)
+    {
+        var requests = await leaveService.GetPendingHRApprovalsAsync(cancellationToken);
         return Ok(requests);
     }
 
     [Authorize(Roles = "LineManager")]
-    [HttpPost("{id:guid}/review")]
-    public async Task<IActionResult> Review(Guid id, ReviewLeaveRequest review, CancellationToken cancellationToken)
+    [HttpPost("{id:guid}/line-manager-review")]
+    public async Task<IActionResult> LineManagerReview(Guid id, ReviewLeaveRequest review, CancellationToken cancellationToken)
     {
-        var result = await leaveService.ReviewAsync(id, User.GetEmployeeId(), review, cancellationToken);
+        var result = await leaveService.LineManagerReviewAsync(id, User.GetEmployeeId(), review, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    [Authorize(Roles = "HR")]
+    [HttpPost("{id:guid}/hr-review")]
+    public async Task<IActionResult> HRReview(Guid id, ReviewLeaveRequest review, CancellationToken cancellationToken)
+    {
+        var result = await leaveService.HRReviewAsync(id, User.GetEmployeeId(), review, cancellationToken);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    [HttpGet("{id:guid}/signed-document")]
+    public async Task<IActionResult> GetSignedDocument(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await leaveService.GenerateSignedDocumentAsync(id, User.GetEmployeeId(), cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return File(result.Value!, "application/pdf", $"leave-request-{id}.pdf");
     }
 }

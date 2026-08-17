@@ -79,7 +79,7 @@ export function ShiftApprovalQueue({ title, items, isBusy, onApprove, onReject }
                     placeholder="Reason for rejection (optional)"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="min-w-[240px] flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                    className="min-w-[240px] flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
                   />
                   <button
                     type="button"

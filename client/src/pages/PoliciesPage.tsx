@@ -1,11 +1,20 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { getSignature } from "../api/account";
 import { extractErrorMessage } from "../api/client";
-import { acknowledgePolicy, createPolicy, getPolicies, getPolicyAcknowledgments } from "../api/policies";
+import {
+  acknowledgePolicy,
+  createPolicy,
+  downloadSignedPolicyAttachment,
+  getPolicies,
+  getPolicyAcknowledgments,
+} from "../api/policies";
+import { getAttachmentsForEntity, uploadAttachment } from "../api/attachments";
 import { AttachmentsPanel } from "../components/AttachmentsPanel";
 import { Badge } from "../components/Badge";
+import { SignaturePad, type SignaturePadHandle } from "../components/SignaturePad";
 import { formatDateTime } from "../lib/format";
-import { AttachmentEntityType } from "../types/attachment";
+import { AttachmentEntityType, type AttachmentDto } from "../types/attachment";
 import { EmployeeRole } from "../types/auth";
 import type { PolicyAcknowledgmentDto, PolicyDto } from "../types/policy";
 
@@ -16,11 +25,17 @@ export function PoliciesPage() {
   const [policies, setPolicies] = useState<PolicyDto[]>([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isActing, setIsActing] = useState(false);
   const [openRosterId, setOpenRosterId] = useState<string | null>(null);
   const [roster, setRoster] = useState<PolicyAcknowledgmentDto[]>([]);
+  const [rosterAttachments, setRosterAttachments] = useState<AttachmentDto[]>([]);
+  const [hasSavedSignature, setHasSavedSignature] = useState(true);
+  const [signingId, setSigningId] = useState<string | null>(null);
+  const signaturePadRef = useRef<SignaturePadHandle>(null);
 
   const loadPolicies = useCallback(async () => {
     try {
@@ -35,14 +50,35 @@ export function PoliciesPage() {
     loadPolicies();
   }, [loadPolicies]);
 
+  useEffect(() => {
+    getSignature()
+      .then((signature) => setHasSavedSignature(signature.hasSignature))
+      .catch(() => {
+        // Assume a signature exists so the inline pad doesn't flash in unnecessarily.
+      });
+  }, []);
+
   async function handlePublish(event: FormEvent) {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
     try {
-      await createPolicy({ title, content });
+      const policy = await createPolicy({ title, content });
+      if (attachmentFile) {
+        try {
+          await uploadAttachment(AttachmentEntityType.Policy, policy.id, attachmentFile);
+        } catch (err) {
+          setError(
+            `The policy was published, but the attachment failed to upload: ${extractErrorMessage(err)}. Attach it below.`,
+          );
+          await loadPolicies();
+          return;
+        }
+      }
       setTitle("");
       setContent("");
+      setAttachmentFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       await loadPolicies();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -51,16 +87,36 @@ export function PoliciesPage() {
     }
   }
 
-  async function handleAcknowledge(id: string) {
+  function handleAcknowledgeClick(id: string) {
+    if (!hasSavedSignature) {
+      setSigningId(id);
+      return;
+    }
+    void acknowledge(id);
+  }
+
+  async function acknowledge(id: string, signaturePngBase64?: string) {
     setIsActing(true);
+    setError(null);
     try {
-      await acknowledgePolicy(id);
+      await acknowledgePolicy(id, { signaturePngBase64 });
+      setHasSavedSignature(true);
+      setSigningId(null);
       await loadPolicies();
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
       setIsActing(false);
     }
+  }
+
+  function confirmSign(id: string) {
+    const drawn = signaturePadRef.current?.getSignature();
+    if (!drawn) {
+      setError("Please sign to acknowledge this policy.");
+      return;
+    }
+    void acknowledge(id, drawn);
   }
 
   async function toggleRoster(id: string) {
@@ -70,13 +126,27 @@ export function PoliciesPage() {
     }
     setIsActing(true);
     try {
-      const data = await getPolicyAcknowledgments(id);
-      setRoster(data);
+      const [ackData, attachments] = await Promise.all([
+        getPolicyAcknowledgments(id),
+        getAttachmentsForEntity(AttachmentEntityType.Policy, id),
+      ]);
+      setRoster(ackData);
+      setRosterAttachments(attachments);
       setOpenRosterId(id);
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
       setIsActing(false);
+    }
+  }
+
+  async function handleDownloadSigned(policyId: string, employeeId: string, employeeName: string, attachment: AttachmentDto) {
+    try {
+      await downloadSignedPolicyAttachment(
+        policyId, employeeId, attachment.id, `${attachment.fileName}-signed-${employeeName}.pdf`,
+      );
+    } catch (err) {
+      setError(extractErrorMessage(err));
     }
   }
 
@@ -92,7 +162,7 @@ export function PoliciesPage() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -102,14 +172,24 @@ export function PoliciesPage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={4}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm text-slate-700">
+              Attachment (optional)
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,image/jpeg,image/png"
+                onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)}
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-slate-700 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-1 w-fit rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+              className="mt-1 w-fit rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
             >
               {isSubmitting ? "Publishing..." : "Publish"}
             </button>
@@ -142,8 +222,8 @@ export function PoliciesPage() {
                       <button
                         type="button"
                         disabled={isActing}
-                        onClick={() => handleAcknowledge(policy.id)}
-                        className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                        onClick={() => handleAcknowledgeClick(policy.id)}
+                        className="rounded-md bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
                       >
                         Acknowledge
                       </button>
@@ -160,15 +240,55 @@ export function PoliciesPage() {
                   </div>
                 </div>
 
+                {signingId === policy.id && (
+                  <div className="mt-3 max-w-sm rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <p className="mb-1 text-xs font-medium text-slate-700">Sign to acknowledge</p>
+                    <SignaturePad ref={signaturePadRef} height={110} />
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        disabled={isActing}
+                        onClick={() => confirmSign(policy.id)}
+                        className="rounded-md bg-yellow-600 px-3 py-1 text-xs font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
+                      >
+                        Confirm & acknowledge
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSigningId(null)}
+                        className="text-xs text-slate-500 hover:underline"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {isHR && openRosterId === policy.id && (
                   <div className="mt-3 rounded-md bg-slate-50 p-3">
                     {roster.length === 0 ? (
                       <p className="text-xs text-slate-500">No one has acknowledged this yet.</p>
                     ) : (
-                      <ul className="flex flex-col gap-1">
+                      <ul className="flex flex-col gap-2">
                         {roster.map((entry) => (
                           <li key={entry.employeeId} className="text-xs text-slate-600">
-                            {entry.employeeName} — {formatDateTime(entry.acknowledgedAtUtc)}
+                            <span>
+                              {entry.employeeName} — {formatDateTime(entry.acknowledgedAtUtc)}
+                            </span>
+                            {rosterAttachments.length > 0 && (
+                              <span className="ml-2 inline-flex flex-wrap gap-2">
+                                {rosterAttachments.map((attachment) => (
+                                  <button
+                                    key={attachment.id}
+                                    type="button"
+                                    onClick={() => handleDownloadSigned(policy.id, entry.employeeId, entry.employeeName, attachment)}
+                                    className="font-medium text-yellow-700 hover:underline"
+                                  >
+                                    Download signed: {attachment.fileName}
+                                  </button>
+                                ))}
+                              </span>
+                            )}
                           </li>
                         ))}
                       </ul>

@@ -24,7 +24,7 @@ public class PpeController(IPpeService ppeService) : ControllerBase
         return Ok(requests);
     }
 
-    [Authorize(Roles = "SafetyOfficer")]
+    [Authorize(Roles = "SafetyOfficer,HR,Executive")]
     [HttpGet("pending")]
     public async Task<IActionResult> GetPending(CancellationToken cancellationToken)
     {
@@ -32,7 +32,7 @@ public class PpeController(IPpeService ppeService) : ControllerBase
         return Ok(requests);
     }
 
-    [Authorize(Roles = "SafetyOfficer")]
+    [Authorize(Roles = "SafetyOfficer,HR,Executive")]
     [HttpGet("awaiting-issue")]
     public async Task<IActionResult> GetAwaitingIssue(CancellationToken cancellationToken)
     {

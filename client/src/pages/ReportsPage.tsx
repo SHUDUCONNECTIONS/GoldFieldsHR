@@ -48,8 +48,6 @@ export function ReportsPage() {
   function handleExportCsv() {
     if (!summary) return;
     downloadCsv(`reports-summary-${new Date().toISOString().slice(0, 10)}.csv`, ["Metric", "Value"], [
-      ["Attendance today (present / active)", `${summary.attendanceToday.presentCount} / ${summary.attendanceToday.activeEmployeeCount}`],
-      ["Attendance today (%)", summary.attendanceToday.percentPresent],
       ["Active employees", summary.activeEmployees],
       ["Total employees", summary.totalEmployees],
       ["Open incidents", summary.openIncidents],
@@ -82,13 +80,6 @@ export function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Attendance today"
-          value={`${summary.attendanceToday.presentCount} / ${summary.attendanceToday.activeEmployeeCount}`}
-          detail={`${summary.attendanceToday.percentPresent}% present`}
-          icon={Users}
-          iconTone="blue"
-        />
         <StatCard
           label="Active employees"
           value={String(summary.activeEmployees)}

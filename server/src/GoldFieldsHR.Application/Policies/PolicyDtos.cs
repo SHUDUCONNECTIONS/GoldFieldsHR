@@ -2,6 +2,8 @@ namespace GoldFieldsHR.Application.Policies;
 
 public record CreatePolicyRequest(string Title, string Content);
 
+public record AcknowledgePolicyRequest(string? SignaturePngBase64);
+
 public record PolicyDto(
     Guid Id,
     string Title,

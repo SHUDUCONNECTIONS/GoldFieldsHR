@@ -8,5 +8,6 @@ public enum AttachmentEntityType
     IncidentReport = 3,
     LeaveRequest = 4,
     LegalAppointment = 5,
-    BoardTask = 6
+    BoardTask = 6,
+    WorkShiftSchedule = 7
 }

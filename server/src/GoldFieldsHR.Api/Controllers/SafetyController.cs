@@ -31,7 +31,7 @@ public class SafetyController(ISafetyService safetyService) : ControllerBase
         return Ok(history);
     }
 
-    [Authorize(Roles = "SafetyOfficer")]
+    [Authorize(Roles = "SafetyOfficer,HR,Executive")]
     [HttpGet("hazards/today")]
     public async Task<IActionResult> GetTodaysHazards(CancellationToken cancellationToken)
     {

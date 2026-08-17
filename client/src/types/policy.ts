@@ -14,6 +14,10 @@ export interface CreatePolicyRequest {
   content: string;
 }
 
+export interface AcknowledgePolicyRequest {
+  signaturePngBase64?: string;
+}
+
 export interface PolicyAcknowledgmentDto {
   employeeId: string;
   employeeName: string;

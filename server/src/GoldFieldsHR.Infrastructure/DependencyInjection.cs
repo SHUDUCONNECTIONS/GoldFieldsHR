@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using GoldFieldsHR.Application.Account;
+using GoldFieldsHR.Application.Acknowledgments;
 using GoldFieldsHR.Application.Announcements;
 using GoldFieldsHR.Application.Attachments;
 using GoldFieldsHR.Application.Auth;
@@ -8,6 +9,7 @@ using GoldFieldsHR.Application.Boards;
 using GoldFieldsHR.Application.Certificates;
 using GoldFieldsHR.Application.Common.Interfaces;
 using GoldFieldsHR.Application.Dashboard;
+using GoldFieldsHR.Application.Documents;
 using GoldFieldsHR.Application.Emergency;
 using GoldFieldsHR.Application.Employees;
 using GoldFieldsHR.Application.Incidents;
@@ -31,6 +33,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using QuestPDF.Infrastructure;
 
@@ -72,6 +75,7 @@ public static class DependencyInjection
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<Attachments.FileStorageSettings>(configuration.GetSection(Attachments.FileStorageSettings.SectionName));
+        services.Configure<Timesheet.ClockingParserSettings>(configuration.GetSection(Timesheet.ClockingParserSettings.SectionName));
 
         var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
 
@@ -121,6 +125,7 @@ public static class DependencyInjection
         services.AddScoped<IPerformanceService, Performance.PerformanceService>();
         services.AddScoped<ITimesheetService, Timesheet.TimesheetService>();
         services.AddScoped<IWorkShiftService, WorkShift.WorkShiftService>();
+        services.AddScoped<IPostedScheduleDocumentService, WorkShift.PostedScheduleDocumentService>();
         services.AddScoped<ILeaveService, Leave.LeaveService>();
         services.AddScoped<IDashboardService, Dashboard.DashboardService>();
         services.AddScoped<ISafetyService, Safety.SafetyService>();
@@ -133,10 +138,21 @@ public static class DependencyInjection
         services.AddScoped<IEmergencyService, Emergency.EmergencyService>();
         services.AddScoped<IEmployeeDirectoryService, Employees.EmployeeDirectoryService>();
         services.AddScoped<IAttachmentService, Attachments.AttachmentService>();
+        services.AddScoped<IAcknowledgmentService, Acknowledgments.AcknowledgmentService>();
         services.AddScoped<INotificationService, Notifications.NotificationService>();
         services.AddScoped<ISiteService, Sites.SiteService>();
         services.AddScoped<IBoardService, Boards.BoardService>();
         services.AddScoped<IBoardTaskService, Boards.BoardTaskService>();
+        services.AddScoped<IDocumentSigningService, Documents.DocumentSigningService>();
+
+        services.AddHttpClient<IClockingReportParserService, Timesheet.ClockingReportParserService>((sp, client) =>
+        {
+            var settings = sp.GetRequiredService<IOptions<Timesheet.ClockingParserSettings>>().Value;
+            client.BaseAddress = new Uri(settings.BaseUrl);
+            // Multi-page clocking reports can take a while to parse (pdfplumber's word
+            // extraction is the slow part) - give it much more room than a typical API call.
+            client.Timeout = TimeSpan.FromMinutes(3);
+        });
 
         services.AddHostedService<Auth.RefreshTokenCleanupService>();
 

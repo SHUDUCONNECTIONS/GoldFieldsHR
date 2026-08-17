@@ -22,6 +22,38 @@ namespace GoldFieldsHR.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GoldFieldsHR.Domain.Entities.Acknowledgment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.HasIndex("EntityType", "EntityId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("Acknowledgments", (string)null);
+                });
+
             modelBuilder.Entity("GoldFieldsHR.Domain.Entities.Announcement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -338,6 +370,12 @@ namespace GoldFieldsHR.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<byte[]>("SignatureImageData")
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime?>("SignatureUpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("SiteId")
                         .HasColumnType("uuid");
 
@@ -438,10 +476,28 @@ namespace GoldFieldsHR.Infrastructure.Migrations
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date");
 
+                    b.Property<DateTime?>("HRReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("HRReviewerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("HRSignatureImageData")
+                        .HasColumnType("bytea");
+
                     b.Property<string>("LeaveType")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("LineManagerReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LineManagerReviewerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("LineManagerSignatureImageData")
+                        .HasColumnType("bytea");
 
                     b.Property<string>("Reason")
                         .IsRequired()
@@ -452,19 +508,13 @@ namespace GoldFieldsHR.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<DateTime?>("ReviewedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ReviewerId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.HasKey("Id");
 
@@ -695,6 +745,10 @@ namespace GoldFieldsHR.Infrastructure.Migrations
                     b.Property<Guid>("PolicyId")
                         .HasColumnType("uuid");
 
+                    b.Property<byte[]>("SignatureImageData")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeId");
@@ -703,6 +757,30 @@ namespace GoldFieldsHR.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("PolicyAcknowledgments", (string)null);
+                });
+
+            modelBuilder.Entity("GoldFieldsHR.Domain.Entities.PostedScheduleDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("PostedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PostedByEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostedByEmployeeId");
+
+                    b.ToTable("PostedScheduleDocuments", (string)null);
                 });
 
             modelBuilder.Entity("GoldFieldsHR.Domain.Entities.PpeRequest", b =>
@@ -1179,6 +1257,17 @@ namespace GoldFieldsHR.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("GoldFieldsHR.Domain.Entities.Acknowledgment", b =>
+                {
+                    b.HasOne("GoldFieldsHR.Domain.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("GoldFieldsHR.Domain.Entities.Announcement", b =>
                 {
                     b.HasOne("GoldFieldsHR.Domain.Entities.Employee", "PostedByEmployee")
@@ -1422,6 +1511,17 @@ namespace GoldFieldsHR.Infrastructure.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("Policy");
+                });
+
+            modelBuilder.Entity("GoldFieldsHR.Domain.Entities.PostedScheduleDocument", b =>
+                {
+                    b.HasOne("GoldFieldsHR.Domain.Entities.Employee", "PostedByEmployee")
+                        .WithMany()
+                        .HasForeignKey("PostedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PostedByEmployee");
                 });
 
             modelBuilder.Entity("GoldFieldsHR.Domain.Entities.PpeRequest", b =>

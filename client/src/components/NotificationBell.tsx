@@ -8,6 +8,7 @@ import {
   markNotificationAsRead,
 } from "../api/notifications";
 import { formatDateTime } from "../lib/format";
+import { playNotificationSound } from "../lib/notificationSound";
 import type { NotificationDto } from "../types/notification";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -18,10 +19,18 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const previousUnreadCountRef = useRef<number | null>(null);
 
   const refreshCount = useCallback(async () => {
     try {
-      setUnreadCount(await getUnreadNotificationCount());
+      const count = await getUnreadNotificationCount();
+      // Only alarm on a genuine increase since the last poll — not on first
+      // load, where any already-unread notifications shouldn't trigger it.
+      if (previousUnreadCountRef.current !== null && count > previousUnreadCountRef.current) {
+        playNotificationSound();
+      }
+      previousUnreadCountRef.current = count;
+      setUnreadCount(count);
     } catch {
       // Silently ignore — the bell just won't update this cycle.
     }
@@ -102,7 +111,7 @@ export function NotificationBell() {
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Notifications</p>
             {unreadCount > 0 && (
-              <button type="button" onClick={handleMarkAllAsRead} className="text-xs text-red-600 hover:underline">
+              <button type="button" onClick={handleMarkAllAsRead} className="text-xs text-yellow-600 hover:underline">
                 Mark all as read
               </button>
             )}
@@ -118,7 +127,7 @@ export function NotificationBell() {
                       type="button"
                       onClick={() => handleNotificationClick(notification)}
                       className={`flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left text-sm hover:bg-slate-50 ${
-                        notification.isRead ? "text-slate-500" : "bg-red-50/50 font-medium text-slate-900"
+                        notification.isRead ? "text-slate-500" : "bg-yellow-50/50 font-medium text-slate-900"
                       }`}
                     >
                       <span>{notification.message}</span>

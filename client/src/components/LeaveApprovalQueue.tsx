@@ -1,21 +1,28 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AttachmentsPanel } from "./AttachmentsPanel";
+import { SignaturePad, type SignaturePadHandle } from "./SignaturePad";
 import { formatDate } from "../lib/format";
 import { AttachmentEntityType } from "../types/attachment";
 import { LeaveTypeLabels, type LeaveRequestDto } from "../types/leave";
 
 interface LeaveApprovalQueueProps {
+  title: string;
   items: LeaveRequestDto[];
   isBusy: boolean;
-  onApprove: (id: string) => void;
+  hasSavedSignature: boolean;
+  onApprove: (id: string, signaturePngBase64?: string) => void;
   onReject: (id: string, reason: string) => void;
 }
 
-export function LeaveApprovalQueue({ items, isBusy, onApprove, onReject }: LeaveApprovalQueueProps) {
+export function LeaveApprovalQueue({ title, items, isBusy, hasSavedSignature, onApprove, onReject }: LeaveApprovalQueueProps) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [signError, setSignError] = useState<string | null>(null);
+  const signaturePadRef = useRef<SignaturePadHandle>(null);
 
   function startReject(id: string) {
+    setApprovingId(null);
     setRejectingId(id);
     setReason("");
   }
@@ -26,10 +33,30 @@ export function LeaveApprovalQueue({ items, isBusy, onApprove, onReject }: Leave
     setReason("");
   }
 
+  function handleApproveClick(id: string) {
+    if (hasSavedSignature) {
+      onApprove(id);
+      return;
+    }
+    setRejectingId(null);
+    setSignError(null);
+    setApprovingId(id);
+  }
+
+  function confirmApprove(id: string) {
+    const drawn = signaturePadRef.current?.getSignature();
+    if (!drawn) {
+      setSignError("Please sign to approve this request.");
+      return;
+    }
+    onApprove(id, drawn);
+    setApprovingId(null);
+  }
+
   return (
     <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-6 py-4">
-        <h3 className="text-sm font-semibold text-slate-900">Pending my approval (Line Manager)</h3>
+        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
       </div>
       {items.length === 0 ? (
         <p className="px-6 py-8 text-center text-sm text-slate-500">Nothing pending approval.</p>
@@ -59,7 +86,7 @@ export function LeaveApprovalQueue({ items, isBusy, onApprove, onReject }: Leave
                   <button
                     type="button"
                     disabled={isBusy}
-                    onClick={() => onApprove(item.id)}
+                    onClick={() => handleApproveClick(item.id)}
                     className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
                   >
                     Approve
@@ -82,6 +109,31 @@ export function LeaveApprovalQueue({ items, isBusy, onApprove, onReject }: Leave
                 compact
               />
 
+              {approvingId === item.id && (
+                <div className="mt-3 max-w-sm rounded-md border border-slate-200 bg-slate-50 p-3">
+                  <p className="mb-1 text-xs font-medium text-slate-700">Sign to approve</p>
+                  <SignaturePad ref={signaturePadRef} height={110} />
+                  {signError && <p className="mt-1 text-xs text-red-600">{signError}</p>}
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => confirmApprove(item.id)}
+                      className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                    >
+                      Confirm & approve
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setApprovingId(null)}
+                      className="text-xs text-slate-500 hover:underline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {rejectingId === item.id && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <input
@@ -89,7 +141,7 @@ export function LeaveApprovalQueue({ items, isBusy, onApprove, onReject }: Leave
                     placeholder="Reason for rejection (optional)"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="min-w-[240px] flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                    className="min-w-[240px] flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
                   />
                   <button
                     type="button"

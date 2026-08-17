@@ -79,7 +79,7 @@ export function PerformanceReviewsPage() {
               required
               value={form.employeeNumber}
               onChange={(e) => setForm((prev) => ({ ...prev, employeeNumber: sanitizeEmployeeNumber(e.target.value) }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -88,7 +88,7 @@ export function PerformanceReviewsPage() {
               required
               value={form.periodLabel}
               onChange={(e) => setForm((prev) => ({ ...prev, periodLabel: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </div>
@@ -103,7 +103,7 @@ export function PerformanceReviewsPage() {
             <select
               value={form.score}
               onChange={(e) => setForm((prev) => ({ ...prev, score: Number(e.target.value) }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             >
               {[5, 4, 3, 2, 1].map((value) => (
                 <option key={value} value={value}>
@@ -118,7 +118,7 @@ export function PerformanceReviewsPage() {
               value={form.comments}
               onChange={(e) => setForm((prev) => ({ ...prev, comments: e.target.value }))}
               rows={2}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </div>

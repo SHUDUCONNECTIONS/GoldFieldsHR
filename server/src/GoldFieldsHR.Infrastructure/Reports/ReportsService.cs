@@ -22,8 +22,6 @@ public class ReportsService(ApplicationDbContext dbContext) : IReportsService
             .OrderBy(r => r.Role)
             .ToList();
 
-        var attendanceToday = await GetAttendanceTodayAsync(cancellationToken);
-
         var openIncidents = await dbContext.IncidentReports
             .CountAsync(i => i.Status != IncidentStatus.Closed, cancellationToken);
         var closedIncidents = await dbContext.IncidentReports
@@ -39,7 +37,9 @@ public class ReportsService(ApplicationDbContext dbContext) : IReportsService
             .ToList();
 
         var pendingLeaveRequests = await dbContext.LeaveRequests
-            .CountAsync(r => r.Status == LeaveRequestStatus.Pending, cancellationToken);
+            .CountAsync(
+                r => r.Status == LeaveRequestStatus.PendingLineManagerApproval || r.Status == LeaveRequestStatus.PendingHRApproval,
+                cancellationToken);
 
         var (validCertificates, dueSoonCertificates, expiredCertificates) = await GetCertificateCountsAsync(cancellationToken);
 
@@ -57,7 +57,6 @@ public class ReportsService(ApplicationDbContext dbContext) : IReportsService
             totalEmployees,
             activeEmployees,
             headcountByRole,
-            attendanceToday,
             openIncidents,
             closedIncidents,
             openIncidentsBySeverity,
@@ -69,24 +68,6 @@ public class ReportsService(ApplicationDbContext dbContext) : IReportsService
             ppeAwaitingIssue,
             pendingLegalAppointments,
             activeLegalAppointments);
-    }
-
-    private async Task<ReportsAttendanceDto> GetAttendanceTodayAsync(CancellationToken cancellationToken)
-    {
-        var todayUtc = DateTime.UtcNow.Date;
-        var tomorrowUtc = todayUtc.AddDays(1);
-
-        var activeEmployeeCount = await dbContext.Employees.CountAsync(e => e.IsActive, cancellationToken);
-
-        var presentCount = await dbContext.TimesheetEntries
-            .Where(t => t.ClockInUtc >= todayUtc && t.ClockInUtc < tomorrowUtc)
-            .Select(t => t.EmployeeId)
-            .Distinct()
-            .CountAsync(cancellationToken);
-
-        var percentPresent = activeEmployeeCount == 0 ? 0 : Math.Round(presentCount * 100.0 / activeEmployeeCount, 1);
-
-        return new ReportsAttendanceDto(presentCount, activeEmployeeCount, percentPresent);
     }
 
     private async Task<(int Valid, int DueSoon, int Expired)> GetCertificateCountsAsync(CancellationToken cancellationToken)

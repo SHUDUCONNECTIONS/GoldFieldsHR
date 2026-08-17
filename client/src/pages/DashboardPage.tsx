@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CalendarOff, GraduationCap, HeartPulse, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, CalendarOff, GraduationCap, HeartPulse, TrendingUp } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { getDashboardSummary } from "../api/dashboard";
 import { getMyNotifications } from "../api/notifications";
 import { extractErrorMessage } from "../api/client";
 import { StatCard } from "../components/StatCard";
-import { ProgressRing } from "../components/ProgressRing";
 import { ModuleLaunchGrid } from "../components/ModuleLaunchGrid";
 import { Card } from "../components/Card";
 import { StatusBadge } from "../components/StatusBadge";
@@ -42,7 +41,6 @@ export function DashboardPage() {
 
   const loadingDetail = error ?? "Loading...";
 
-  const attendancePercent = useCountUp(summary ? summary.attendance.percentPresent : null, 1);
   const incidentsCount = useCountUp(summary ? summary.incidentsThisMonth : null);
   const medicalPercent = useCountUp(summary?.medicalCompliancePercent ?? null, 1);
   const trainingPercent = useCountUp(summary?.trainingCompliancePercent ?? null, 1);
@@ -59,19 +57,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard
-          label="Attendance Today"
-          value={attendancePercent !== null ? `${attendancePercent}%` : "—"}
-          detail={
-            summary
-              ? `${summary.attendance.presentCount} / ${summary.attendance.activeEmployeeCount} clocked in at your site`
-              : loadingDetail
-          }
-          icon={Users}
-          iconTone="blue"
-          tone={summary && summary.attendance.percentPresent < 70 ? "warning" : "default"}
-        />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           label="Incidents (MTD)"
           value={incidentsCount !== null ? String(incidentsCount) : "—"}
@@ -117,21 +103,7 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="self-start text-sm font-semibold text-slate-900">Work Shift Overview</h3>
-          {summary ? (
-            <ProgressRing
-              percent={summary.attendance.percentPresent}
-              label={`${summary.attendance.percentPresent}%`}
-              sublabel="present today"
-              progressClassName={summary.attendance.percentPresent < 70 ? "stroke-amber-500" : "stroke-emerald-500"}
-            />
-          ) : (
-            <p className="py-10 text-sm text-slate-500">{loadingDetail}</p>
-          )}
-        </div>
-
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card title="Recent Shift Requests">
           {!summary || summary.recentShiftRequests.length === 0 ? (
             <p className="px-6 py-8 text-center text-sm text-slate-500">

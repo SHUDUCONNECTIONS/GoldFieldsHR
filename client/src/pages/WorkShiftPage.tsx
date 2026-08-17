@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { uploadAttachment } from "../api/attachments";
 import { extractErrorMessage } from "../api/client";
 import {
   getMyShiftChangeRequests,
@@ -9,11 +10,15 @@ import {
   lineManagerReview,
   submitShiftChangeRequest,
 } from "../api/workShift";
+import { createScheduleDocument, deleteScheduleDocument, getScheduleDocuments } from "../api/scheduleDocuments";
+import { AttachmentsPanel } from "../components/AttachmentsPanel";
 import { ShiftApprovalQueue } from "../components/ShiftApprovalQueue";
 import { StatusBadge } from "../components/StatusBadge";
 import { StepForm, type WizardStep } from "../components/StepForm";
 import { formatDate, formatDateTime } from "../lib/format";
+import { AttachmentEntityType } from "../types/attachment";
 import { EmployeeRole } from "../types/auth";
+import type { PostedScheduleDocumentDto } from "../types/scheduleDocument";
 import { ShiftType, ShiftTypeLabels, type ShiftChangeRequestDto } from "../types/workShift";
 
 interface ShiftRequestForm {
@@ -43,9 +48,20 @@ export function WorkShiftPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
 
+  const [scheduleDocuments, setScheduleDocuments] = useState<PostedScheduleDocumentDto[]>([]);
+  const [scheduleTitle, setScheduleTitle] = useState("");
+  const [scheduleFile, setScheduleFile] = useState<File | null>(null);
+  const [isPostingSchedule, setIsPostingSchedule] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
+  const scheduleFileInputRef = useRef<HTMLInputElement>(null);
+
   const loadAll = useCallback(async () => {
     try {
-      const requests: Promise<unknown>[] = [getMyShiftChangeRequests().then(setMyRequests)];
+      const requests: Promise<unknown>[] = [
+        getMyShiftChangeRequests().then(setMyRequests),
+        getScheduleDocuments().then(setScheduleDocuments),
+      ];
       if (isLineManager) requests.push(getPendingLineManagerApprovals().then(setLineManagerQueue));
       if (isHR) requests.push(getPendingHRApprovals().then(setHrQueue));
       await Promise.all(requests);
@@ -90,7 +106,7 @@ export function WorkShiftPage() {
               required
               value={form.requestedShiftDate}
               onChange={(e) => setForm((prev) => ({ ...prev, requestedShiftDate: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -101,7 +117,7 @@ export function WorkShiftPage() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, requestedShiftType: Number(e.target.value) as ShiftType }))
               }
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             >
               {Object.entries(ShiftTypeLabels).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -124,7 +140,7 @@ export function WorkShiftPage() {
               required
               value={form.reason}
               onChange={(e) => setForm((prev) => ({ ...prev, reason: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -134,7 +150,7 @@ export function WorkShiftPage() {
               value={form.comments}
               onChange={(e) => setForm((prev) => ({ ...prev, comments: e.target.value }))}
               rows={2}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </div>
@@ -190,8 +206,125 @@ export function WorkShiftPage() {
     }
   }
 
+  async function handlePostScheduleDocument() {
+    if (!scheduleTitle.trim()) {
+      setScheduleError("Give the schedule a title, e.g. \"Week 34 Roster\".");
+      return;
+    }
+    setScheduleError(null);
+    setIsPostingSchedule(true);
+    try {
+      const document = await createScheduleDocument({ title: scheduleTitle.trim() });
+      if (scheduleFile) {
+        try {
+          await uploadAttachment(AttachmentEntityType.WorkShiftSchedule, document.id, scheduleFile);
+        } catch (err) {
+          setScheduleError(
+            `The schedule was posted, but the attachment failed to upload: ${extractErrorMessage(err)}. Attach it below.`,
+          );
+          await loadAll();
+          return;
+        }
+      }
+      setScheduleTitle("");
+      setScheduleFile(null);
+      if (scheduleFileInputRef.current) scheduleFileInputRef.current.value = "";
+      await loadAll();
+    } catch (err) {
+      setScheduleError(extractErrorMessage(err));
+    } finally {
+      setIsPostingSchedule(false);
+    }
+  }
+
+  async function handleDeleteScheduleDocument(id: string) {
+    setDeletingDocumentId(id);
+    try {
+      await deleteScheduleDocument(id);
+      await loadAll();
+    } catch (err) {
+      setScheduleError(extractErrorMessage(err));
+    } finally {
+      setDeletingDocumentId(null);
+    }
+  }
+
   return (
     <div className="stagger-children flex flex-col gap-6">
+      {isHR && (
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-1 text-sm font-semibold text-slate-900">Post a schedule</h3>
+          <p className="mb-4 text-xs text-slate-500">
+            Upload the roster as a document (PDF or image) — everyone can view and download it below.
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-1 min-w-[220px] flex-col gap-1 text-sm text-slate-700">
+              Title
+              <input
+                value={scheduleTitle}
+                onChange={(e) => setScheduleTitle(e.target.value)}
+                placeholder="e.g. Week 34 Roster"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
+              />
+            </label>
+            <label className="flex flex-1 min-w-[220px] flex-col gap-1 text-sm text-slate-700">
+              Attachment (optional)
+              <input
+                ref={scheduleFileInputRef}
+                type="file"
+                accept="application/pdf,image/jpeg,image/png"
+                onChange={(e) => setScheduleFile(e.target.files?.[0] ?? null)}
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-slate-700 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={isPostingSchedule}
+              onClick={handlePostScheduleDocument}
+              className="rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
+            >
+              {isPostingSchedule ? "Posting..." : "Post schedule"}
+            </button>
+          </div>
+          {scheduleError && <p className="mt-2 text-sm text-red-600">{scheduleError}</p>}
+        </div>
+      )}
+
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-6 py-4">
+          <h3 className="text-sm font-semibold text-slate-900">Posted schedules</h3>
+        </div>
+        {scheduleDocuments.length === 0 ? (
+          <p className="px-6 py-8 text-center text-sm text-slate-500">No schedules posted yet.</p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {scheduleDocuments.map((doc) => (
+              <li key={doc.id} className="px-6 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{doc.title}</p>
+                    <p className="text-xs text-slate-500">
+                      Posted by {doc.postedByName} — {formatDateTime(doc.postedAtUtc)}
+                    </p>
+                  </div>
+                  {isHR && (
+                    <button
+                      type="button"
+                      disabled={deletingDocumentId !== null}
+                      onClick={() => handleDeleteScheduleDocument(doc.id)}
+                      className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <AttachmentsPanel entityType={AttachmentEntityType.WorkShiftSchedule} entityId={doc.id} canUpload={isHR} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {isLineManager && (
         <ShiftApprovalQueue
           title="Pending my approval (Line Manager)"

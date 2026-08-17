@@ -78,7 +78,7 @@ export function AttachmentsPanel({ entityType, entityId, canUpload, compact = fa
           {!compact && "Attachments"}
         </p>
         {canUpload && (
-          <label className="cursor-pointer text-xs font-medium text-red-600 hover:underline">
+          <label className="cursor-pointer text-xs font-medium text-yellow-600 hover:underline">
             {isUploading ? "Uploading..." : "Upload file"}
             <input
               ref={fileInputRef}
@@ -110,7 +110,7 @@ export function AttachmentsPanel({ entityType, entityId, canUpload, compact = fa
                   type="button"
                   disabled={downloadingId === attachment.id}
                   onClick={() => handleDownload(attachment)}
-                  className="text-red-600 hover:underline disabled:opacity-50"
+                  className="text-yellow-600 hover:underline disabled:opacity-50"
                 >
                   <Download className="h-3.5 w-3.5" />
                 </button>

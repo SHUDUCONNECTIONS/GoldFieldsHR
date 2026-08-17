@@ -72,9 +72,9 @@ export function StepForm({ steps, onSubmit, submitLabel, submittingLabel, isSubm
                 <div
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
                     i < step
-                      ? "bg-red-600 text-white"
+                      ? "bg-yellow-600 text-white"
                       : i === step
-                        ? "bg-red-600 text-white ring-4 ring-red-100"
+                        ? "bg-yellow-600 text-white ring-4 ring-yellow-100"
                         : "bg-stone-100 text-stone-400"
                   }`}
                 >
@@ -87,7 +87,7 @@ export function StepForm({ steps, onSubmit, submitLabel, submittingLabel, isSubm
                 </span>
               </div>
               {i < steps.length - 1 && (
-                <div className={`mx-2 h-0.5 flex-1 rounded-full ${i < step ? "bg-red-600" : "bg-stone-200"}`} />
+                <div className={`mx-2 h-0.5 flex-1 rounded-full ${i < step ? "bg-yellow-600" : "bg-stone-200"}`} />
               )}
             </div>
           ))}
@@ -118,7 +118,7 @@ export function StepForm({ steps, onSubmit, submitLabel, submittingLabel, isSubm
           type="button"
           onClick={handlePrimaryAction}
           disabled={isLastStep && (isSubmitting || submitDisabled)}
-          className="w-fit rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+          className="w-fit rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
         >
           {isLastStep ? (isSubmitting ? submittingLabel : submitLabel) : "Next"}
         </button>

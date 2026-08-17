@@ -1,12 +1,15 @@
+import { AcknowledgmentPanel } from "./AcknowledgmentPanel";
+import { AcknowledgmentEntityType } from "../types/acknowledgment";
 import { PpeItemTypeLabels, type PpeRequestDto } from "../types/ppe";
 
 interface PpeIssueQueueProps {
   items: PpeRequestDto[];
   isBusy: boolean;
+  canManage: boolean;
   onIssue: (id: string) => void;
 }
 
-export function PpeIssueQueue({ items, isBusy, onIssue }: PpeIssueQueueProps) {
+export function PpeIssueQueue({ items, isBusy, canManage, onIssue }: PpeIssueQueueProps) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-6 py-4">
@@ -17,22 +20,27 @@ export function PpeIssueQueue({ items, isBusy, onIssue }: PpeIssueQueueProps) {
       ) : (
         <ul className="divide-y divide-slate-100">
           {items.map((item) => (
-            <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
-              <div>
-                <p className="text-sm font-medium text-slate-900">{item.employeeName}</p>
-                <p className="text-sm text-slate-600">
-                  {PpeItemTypeLabels[item.itemType]} × {item.quantity}
-                  {item.size ? ` (size ${item.size})` : ""}
-                </p>
+            <li key={item.id} className="px-6 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">{item.employeeName}</p>
+                  <p className="text-sm text-slate-600">
+                    {PpeItemTypeLabels[item.itemType]} × {item.quantity}
+                    {item.size ? ` (size ${item.size})` : ""}
+                  </p>
+                </div>
+                {canManage && (
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => onIssue(item.id)}
+                    className="rounded-md bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
+                  >
+                    Mark issued
+                  </button>
+                )}
               </div>
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={() => onIssue(item.id)}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
-              >
-                Mark issued
-              </button>
+              <AcknowledgmentPanel entityType={AcknowledgmentEntityType.PpeRequest} entityId={item.id} />
             </li>
           ))}
         </ul>

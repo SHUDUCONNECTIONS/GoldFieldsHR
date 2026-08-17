@@ -21,14 +21,16 @@ export const LeaveTypeLabels: Record<LeaveType, string> = {
 export const LEAVE_TYPES_REQUIRING_CERTIFICATE: readonly LeaveType[] = [LeaveType.Sick, LeaveType.InjuryOnDuty];
 
 export const LeaveRequestStatus = {
-  Pending: 0,
-  Approved: 1,
-  Rejected: 2,
+  PendingLineManagerApproval: 0,
+  PendingHRApproval: 1,
+  Approved: 2,
+  Rejected: 3,
 } as const;
 export type LeaveRequestStatus = (typeof LeaveRequestStatus)[keyof typeof LeaveRequestStatus];
 
 export const LeaveRequestStatusLabels: Record<LeaveRequestStatus, string> = {
-  [LeaveRequestStatus.Pending]: "Pending",
+  [LeaveRequestStatus.PendingLineManagerApproval]: "Pending Line Manager",
+  [LeaveRequestStatus.PendingHRApproval]: "Pending HR",
   [LeaveRequestStatus.Approved]: "Approved",
   [LeaveRequestStatus.Rejected]: "Rejected",
 };
@@ -45,7 +47,8 @@ export interface LeaveRequestDto {
   contactNumber: string;
   status: LeaveRequestStatus;
   createdAtUtc: string;
-  reviewedAtUtc: string | null;
+  lineManagerReviewedAtUtc: string | null;
+  hrReviewedAtUtc: string | null;
   rejectionReason: string | null;
   isDirectReport: boolean;
 }
@@ -61,4 +64,5 @@ export interface SubmitLeaveRequest {
 export interface ReviewLeaveRequest {
   approve: boolean;
   rejectionReason?: string;
+  signaturePngBase64?: string;
 }

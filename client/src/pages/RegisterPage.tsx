@@ -83,7 +83,7 @@ export function RegisterPage() {
                 required
                 value={form.firstName}
                 onChange={(e) => updateField("firstName", sanitizeLettersOnly(e.target.value))}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -92,7 +92,7 @@ export function RegisterPage() {
                 required
                 value={form.lastName}
                 onChange={(e) => updateField("lastName", sanitizeLettersOnly(e.target.value))}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
           </div>
@@ -104,7 +104,7 @@ export function RegisterPage() {
               required
               value={form.email}
               onChange={(e) => updateField("email", e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -116,7 +116,7 @@ export function RegisterPage() {
               minLength={8}
               value={form.password}
               onChange={(e) => updateField("password", e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </>
@@ -139,7 +139,7 @@ export function RegisterPage() {
                 required
                 value={form.employeeNumber}
                 onChange={(e) => updateField("employeeNumber", sanitizeEmployeeNumber(e.target.value))}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -148,7 +148,7 @@ export function RegisterPage() {
                 required
                 value={form.jobTitle}
                 onChange={(e) => updateField("jobTitle", e.target.value)}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
           </div>
@@ -159,7 +159,7 @@ export function RegisterPage() {
               required
               value={form.siteId}
               onChange={(e) => updateField("siteId", e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             >
               {sites.map((site) => (
                 <option key={site.id} value={site.id}>
@@ -181,7 +181,7 @@ export function RegisterPage() {
               value={form.managerEmployeeNumber}
               onChange={(e) => updateField("managerEmployeeNumber", sanitizeEmployeeNumber(e.target.value))}
               placeholder="e.g. LM-1024"
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -190,7 +190,7 @@ export function RegisterPage() {
             <select
               value={form.requestedRole}
               onChange={(e) => updateField("requestedRole", Number(e.target.value) as EmployeeRole)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm transition-shadow focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             >
               {Object.entries(EmployeeRoleLabels).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -216,7 +216,7 @@ export function RegisterPage() {
         <span className="blob-bl" />
       </div>
       <div className="fade-in-up relative z-10 w-full max-w-md overflow-hidden rounded-2xl bg-white p-8 shadow-xl">
-        <span className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-red-500 via-red-600 to-slate-900" />
+        <span className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-yellow-500 via-yellow-600 to-slate-900" />
         <div className="mb-6 flex items-center gap-2">
           <img src={ramsLogo} alt="Rams Mining Technologies" className="h-9 w-auto" />
           <p className="text-xs text-slate-500">Engineering the Future of Mining.</p>
@@ -236,7 +236,7 @@ export function RegisterPage() {
 
         <p className="mt-4 text-center text-sm text-slate-500">
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-red-600 hover:underline">
+          <Link to="/login" className="font-medium text-yellow-600 hover:underline">
             Sign in
           </Link>
         </p>

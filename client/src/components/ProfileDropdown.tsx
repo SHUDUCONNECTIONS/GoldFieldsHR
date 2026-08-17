@@ -38,7 +38,7 @@ export function ProfileDropdown() {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white hover:bg-red-400"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500 text-xs font-semibold text-white hover:bg-yellow-400"
         aria-label="Account"
       >
         {getInitials(session.fullName)}

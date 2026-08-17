@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { uploadAttachment } from "../api/attachments";
 import { extractErrorMessage } from "../api/client";
 import { getAllMedicalExaminations, getMyMedicalExaminations, recordMedicalExamination } from "../api/medical";
 import { AttachmentsPanel } from "../components/AttachmentsPanel";
@@ -27,8 +28,10 @@ export function MedicalPage() {
   const [myExaminations, setMyExaminations] = useState<MedicalExaminationDto[]>([]);
   const [allExaminations, setAllExaminations] = useState<MedicalExaminationDto[]>([]);
   const [form, setForm] = useState(initialForm);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadAll = useCallback(async () => {
     try {
@@ -48,12 +51,25 @@ export function MedicalPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await recordMedicalExamination({
+      const examination = await recordMedicalExamination({
         ...form,
         restrictions: form.restrictions || undefined,
         notes: form.notes || undefined,
       });
+      if (attachmentFile) {
+        try {
+          await uploadAttachment(AttachmentEntityType.MedicalExamination, examination.id, attachmentFile);
+        } catch (err) {
+          setError(
+            `The examination was recorded, but the attachment failed to upload: ${extractErrorMessage(err)}. Attach it below.`,
+          );
+          await loadAll();
+          return;
+        }
+      }
       setForm(initialForm);
+      setAttachmentFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -80,7 +96,7 @@ export function MedicalPage() {
               required
               value={form.employeeNumber}
               onChange={(e) => setForm((prev) => ({ ...prev, employeeNumber: sanitizeEmployeeNumber(e.target.value) }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -88,7 +104,7 @@ export function MedicalPage() {
             <select
               value={form.status}
               onChange={(e) => setForm((prev) => ({ ...prev, status: Number(e.target.value) as FitnessStatus }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             >
               {Object.values(FitnessStatus)
                 .filter((v): v is FitnessStatus => typeof v === "number")
@@ -106,7 +122,7 @@ export function MedicalPage() {
                 required
                 value={form.restrictions}
                 onChange={(e) => setForm((prev) => ({ ...prev, restrictions: e.target.value }))}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
               />
             </label>
           )}
@@ -125,7 +141,7 @@ export function MedicalPage() {
               required
               value={form.examDate}
               onChange={(e) => setForm((prev) => ({ ...prev, examDate: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -135,7 +151,7 @@ export function MedicalPage() {
               required
               value={form.expiryDate}
               onChange={(e) => setForm((prev) => ({ ...prev, expiryDate: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
@@ -143,7 +159,17 @@ export function MedicalPage() {
             <input
               value={form.notes}
               onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Attachment (optional)
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-slate-700 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </div>

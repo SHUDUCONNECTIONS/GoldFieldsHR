@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { uploadAttachment } from "../api/attachments";
 import { extractErrorMessage } from "../api/client";
 import {
   getActiveLegalAppointments,
@@ -38,19 +39,24 @@ const initialForm: LegalAppointmentRequestForm = {
 export function LegalAppointmentsPage() {
   const { session } = useAuth();
   const isSafetyOfficer = session?.role === EmployeeRole.SafetyOfficer;
+  const isHR = session?.role === EmployeeRole.HR;
+  const isExecutive = session?.role === EmployeeRole.Executive;
+  const canViewQueues = isSafetyOfficer || isHR || isExecutive;
 
   const [myAppointments, setMyAppointments] = useState<LegalAppointmentDto[]>([]);
   const [pendingQueue, setPendingQueue] = useState<LegalAppointmentDto[]>([]);
   const [activeAppointments, setActiveAppointments] = useState<LegalAppointmentDto[]>([]);
   const [form, setForm] = useState(initialForm);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadAll = useCallback(async () => {
     try {
       const requests: Promise<unknown>[] = [getMyLegalAppointments().then(setMyAppointments)];
-      if (isSafetyOfficer) {
+      if (canViewQueues) {
         requests.push(getPendingLegalAppointmentApprovals().then(setPendingQueue));
         requests.push(getActiveLegalAppointments().then(setActiveAppointments));
       }
@@ -58,7 +64,7 @@ export function LegalAppointmentsPage() {
     } catch (err) {
       setError(extractErrorMessage(err));
     }
-  }, [isSafetyOfficer]);
+  }, [canViewQueues]);
 
   useEffect(() => {
     loadAll();
@@ -68,8 +74,21 @@ export function LegalAppointmentsPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await submitLegalAppointment(form);
+      const appointment = await submitLegalAppointment(form);
+      if (attachmentFile) {
+        try {
+          await uploadAttachment(AttachmentEntityType.LegalAppointment, appointment.id, attachmentFile);
+        } catch (err) {
+          setError(
+            `The appointment request was submitted, but the attachment failed to upload: ${extractErrorMessage(err)}. Attach it below.`,
+          );
+          await loadAll();
+          return;
+        }
+      }
       setForm(initialForm);
+      setAttachmentFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -91,7 +110,7 @@ export function LegalAppointmentsPage() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, appointmentType: Number(e.target.value) as LegalAppointmentType }))
               }
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             >
               {Object.entries(LegalAppointmentTypeLabels).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -107,7 +126,7 @@ export function LegalAppointmentsPage() {
               placeholder="e.g. J. Smith, Mine Manager"
               value={form.appointedBy}
               onChange={(e) => setForm((prev) => ({ ...prev, appointedBy: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </div>
@@ -125,7 +144,7 @@ export function LegalAppointmentsPage() {
               required
               value={form.validFrom}
               onChange={(e) => setForm((prev) => ({ ...prev, validFrom: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -135,7 +154,7 @@ export function LegalAppointmentsPage() {
               required
               value={form.validTo}
               onChange={(e) => setForm((prev) => ({ ...prev, validTo: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
@@ -145,7 +164,17 @@ export function LegalAppointmentsPage() {
               rows={2}
               value={form.description}
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Attachment (optional)
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-slate-700 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </div>
@@ -191,15 +220,21 @@ export function LegalAppointmentsPage() {
 
   return (
     <div className="stagger-children flex flex-col gap-6">
-      {isSafetyOfficer && (
+      {canViewQueues && (
         <>
           <LegalAppointmentApprovalQueue
             items={pendingQueue}
             isBusy={isBusy}
+            canManage={isSafetyOfficer}
             onApprove={handleApprove}
             onReject={handleReject}
           />
-          <LegalAppointmentRevokeQueue items={activeAppointments} isBusy={isBusy} onRevoke={handleRevoke} />
+          <LegalAppointmentRevokeQueue
+            items={activeAppointments}
+            isBusy={isBusy}
+            canManage={isSafetyOfficer}
+            onRevoke={handleRevoke}
+          />
         </>
       )}
 

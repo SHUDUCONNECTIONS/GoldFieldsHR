@@ -12,7 +12,6 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
         var employee = await dbContext.Employees.FindAsync([employeeId], cancellationToken)
             ?? throw new InvalidOperationException("Employee profile not found.");
 
-        var attendance = await GetAttendanceSummaryAsync(employee.SiteId, cancellationToken);
         var pendingLeaveCount = await GetPendingLeaveCountAsync(employee.Id, employee.Role, cancellationToken);
         var incidentsThisMonth = await GetIncidentsThisMonthAsync(cancellationToken);
         var medicalCompliancePercent = await GetMedicalCompliancePercentAsync(cancellationToken);
@@ -21,7 +20,6 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
         var recentShiftRequests = await GetRecentShiftRequestsAsync(employee.Id, employee.Role, cancellationToken);
 
         return new DashboardSummaryDto(
-            attendance,
             pendingLeaveCount,
             incidentsThisMonth,
             medicalCompliancePercent,
@@ -30,31 +28,14 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
             recentShiftRequests);
     }
 
-    private async Task<AttendanceSummaryDto> GetAttendanceSummaryAsync(Guid siteId, CancellationToken cancellationToken)
-    {
-        var todayUtc = DateTime.UtcNow.Date;
-        var tomorrowUtc = todayUtc.AddDays(1);
-
-        var activeEmployeeCount = await dbContext.Employees
-            .CountAsync(e => e.IsActive && e.SiteId == siteId, cancellationToken);
-
-        var presentCount = await dbContext.TimesheetEntries
-            .Where(t => t.ClockInUtc >= todayUtc && t.ClockInUtc < tomorrowUtc && t.Employee!.SiteId == siteId)
-            .Select(t => t.EmployeeId)
-            .Distinct()
-            .CountAsync(cancellationToken);
-
-        var percentPresent = activeEmployeeCount == 0 ? 0 : Math.Round(presentCount * 100.0 / activeEmployeeCount, 1);
-
-        return new AttendanceSummaryDto(presentCount, activeEmployeeCount, percentPresent);
-    }
-
     private async Task<int> GetPendingLeaveCountAsync(Guid employeeId, EmployeeRole role, CancellationToken cancellationToken)
     {
         return role == EmployeeRole.LineManager
-            ? await dbContext.LeaveRequests.CountAsync(r => r.Status == LeaveRequestStatus.Pending, cancellationToken)
+            ? await dbContext.LeaveRequests.CountAsync(r => r.Status == LeaveRequestStatus.PendingLineManagerApproval, cancellationToken)
             : await dbContext.LeaveRequests.CountAsync(
-                r => r.EmployeeId == employeeId && r.Status == LeaveRequestStatus.Pending, cancellationToken);
+                r => r.EmployeeId == employeeId
+                    && (r.Status == LeaveRequestStatus.PendingLineManagerApproval || r.Status == LeaveRequestStatus.PendingHRApproval),
+                cancellationToken);
     }
 
     private async Task<int> GetIncidentsThisMonthAsync(CancellationToken cancellationToken)

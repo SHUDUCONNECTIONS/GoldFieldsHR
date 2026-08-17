@@ -246,12 +246,12 @@ export function EmployeeDirectory({ canManage, canApproveRoleRequests = canManag
             placeholder="Search name, #, email, title..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-56 rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            className="w-56 rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
           />
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value === "all" ? "all" : (Number(e.target.value) as EmployeeRole))}
-            className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
           >
             <option value="all">All roles</option>
             {Object.entries(EmployeeRoleLabels).map(([value, label]) => (
@@ -263,7 +263,7 @@ export function EmployeeDirectory({ canManage, canApproveRoleRequests = canManag
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
-            className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
           >
             <option value="all">All statuses</option>
             <option value="active">Active</option>
@@ -314,7 +314,7 @@ export function EmployeeDirectory({ canManage, canApproveRoleRequests = canManag
                       <select
                         value={roleInput}
                         onChange={(e) => setRoleInput(Number(e.target.value) as EmployeeRole)}
-                        className="rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                        className="rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
                       >
                         {Object.entries(EmployeeRoleLabels).map(([value, label]) => (
                           <option key={value} value={value}>
@@ -326,7 +326,7 @@ export function EmployeeDirectory({ canManage, canApproveRoleRequests = canManag
                         type="button"
                         disabled={busyId === employee.id}
                         onClick={() => confirmEditRole(employee.id)}
-                        className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                        className="rounded-md bg-yellow-600 px-2 py-1 text-xs font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
                       >
                         Save
                       </button>
@@ -351,13 +351,13 @@ export function EmployeeDirectory({ canManage, canApproveRoleRequests = canManag
                         placeholder="Employee #"
                         value={managerNumberInput}
                         onChange={(e) => setManagerNumberInput(sanitizeEmployeeNumber(e.target.value))}
-                        className="w-28 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                        className="w-28 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
                       />
                       <button
                         type="button"
                         disabled={busyId === employee.id}
                         onClick={() => confirmEditManager(employee.id)}
-                        className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                        className="rounded-md bg-yellow-600 px-2 py-1 text-xs font-medium text-white hover:bg-yellow-500 disabled:opacity-50"
                       >
                         Save
                       </button>

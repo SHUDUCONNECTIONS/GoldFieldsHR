@@ -1,11 +1,5 @@
 import type { ShiftRequestStatus, ShiftType } from "./workShift";
 
-export interface AttendanceSummary {
-  presentCount: number;
-  activeEmployeeCount: number;
-  percentPresent: number;
-}
-
 export interface RecentShiftRequest {
   id: string;
   employeeName: string;
@@ -16,7 +10,6 @@ export interface RecentShiftRequest {
 }
 
 export interface DashboardSummary {
-  attendance: AttendanceSummary;
   pendingLeaveCount: number;
   incidentsThisMonth: number;
   medicalCompliancePercent: number | null;

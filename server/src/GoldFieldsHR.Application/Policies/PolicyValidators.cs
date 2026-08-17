@@ -10,3 +10,11 @@ public class CreatePolicyRequestValidator : AbstractValidator<CreatePolicyReques
         RuleFor(x => x.Content).NotEmpty().MaximumLength(20000);
     }
 }
+
+public class AcknowledgePolicyRequestValidator : AbstractValidator<AcknowledgePolicyRequest>
+{
+    public AcknowledgePolicyRequestValidator()
+    {
+        RuleFor(x => x.SignaturePngBase64).MaximumLength(2_000_000);
+    }
+}

@@ -12,3 +12,7 @@ public record ProfileDto(
     string SiteName);
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
+public record SetSignatureRequest(string SignaturePngBase64);
+
+public record SignatureDto(bool HasSignature, string? SignaturePngBase64, DateTime? UpdatedAtUtc);

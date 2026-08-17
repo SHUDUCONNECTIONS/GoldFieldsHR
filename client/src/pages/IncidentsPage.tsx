@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { uploadAttachment } from "../api/attachments";
 import { extractErrorMessage } from "../api/client";
 import {
   getAllIncidentReports,
@@ -7,10 +8,12 @@ import {
   submitIncidentReport,
   updateIncidentStatus,
 } from "../api/incidents";
+import { AcknowledgmentPanel } from "../components/AcknowledgmentPanel";
 import { AttachmentsPanel } from "../components/AttachmentsPanel";
 import { IncidentSeverityBadge, IncidentStatusBadge } from "../components/IncidentBadges";
 import { StepForm, type WizardStep } from "../components/StepForm";
 import { formatDateTime } from "../lib/format";
+import { AcknowledgmentEntityType } from "../types/acknowledgment";
 import { AttachmentEntityType } from "../types/attachment";
 import { EmployeeRole } from "../types/auth";
 import {
@@ -39,24 +42,29 @@ const initialForm: IncidentForm = {
 export function IncidentsPage() {
   const { session } = useAuth();
   const isSafetyOfficer = session?.role === EmployeeRole.SafetyOfficer;
+  const isHR = session?.role === EmployeeRole.HR;
+  const isExecutive = session?.role === EmployeeRole.Executive;
+  const canViewAllReports = isSafetyOfficer || isHR || isExecutive;
 
   const [myReports, setMyReports] = useState<IncidentReportDto[]>([]);
   const [allReports, setAllReports] = useState<IncidentReportDto[]>([]);
   const [form, setForm] = useState(initialForm);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [notesById, setNotesById] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadAll = useCallback(async () => {
     try {
       const requests: Promise<unknown>[] = [getMyIncidentReports().then(setMyReports)];
-      if (isSafetyOfficer) requests.push(getAllIncidentReports().then(setAllReports));
+      if (canViewAllReports) requests.push(getAllIncidentReports().then(setAllReports));
       await Promise.all(requests);
     } catch (err) {
       setError(extractErrorMessage(err));
     }
-  }, [isSafetyOfficer]);
+  }, [canViewAllReports]);
 
   useEffect(() => {
     loadAll();
@@ -66,14 +74,27 @@ export function IncidentsPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await submitIncidentReport({
+      const report = await submitIncidentReport({
         title: form.title,
         description: form.description,
         severity: form.severity,
         location: form.location,
         occurredAtUtc: new Date(form.occurredAt).toISOString(),
       });
+      if (attachmentFile) {
+        try {
+          await uploadAttachment(AttachmentEntityType.IncidentReport, report.id, attachmentFile);
+        } catch (err) {
+          setError(
+            `The report was submitted, but the attachment failed to upload: ${extractErrorMessage(err)}. Attach it below.`,
+          );
+          await loadAll();
+          return;
+        }
+      }
       setForm(initialForm);
+      setAttachmentFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       await loadAll();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -94,7 +115,7 @@ export function IncidentsPage() {
               required
               value={form.title}
               onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -103,7 +124,7 @@ export function IncidentsPage() {
             <select
               value={form.severity}
               onChange={(e) => setForm((prev) => ({ ...prev, severity: Number(e.target.value) as IncidentSeverity }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             >
               {Object.entries(IncidentSeverityLabels).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -119,7 +140,7 @@ export function IncidentsPage() {
               required
               value={form.location}
               onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </div>
@@ -137,7 +158,7 @@ export function IncidentsPage() {
               required
               value={form.occurredAt}
               onChange={(e) => setForm((prev) => ({ ...prev, occurredAt: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
 
@@ -148,7 +169,17 @@ export function IncidentsPage() {
               value={form.description}
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
               rows={3}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700 sm:col-span-2">
+            Attachment (optional)
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-slate-700 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
             />
           </label>
         </div>
@@ -171,7 +202,7 @@ export function IncidentsPage() {
 
   return (
     <div className="stagger-children flex flex-col gap-6">
-      {isSafetyOfficer && (
+      {canViewAllReports && (
         <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-6 py-4">
             <h3 className="text-sm font-semibold text-slate-900">All incident reports</h3>
@@ -197,41 +228,44 @@ export function IncidentsPage() {
                         <p className="mt-2 text-xs text-slate-500">Review notes: {item.reviewNotes}</p>
                       )}
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      {item.status === IncidentStatus.Reported && (
-                        <button
-                          type="button"
-                          disabled={isUpdating}
-                          onClick={() => advanceStatus(item.id, IncidentStatus.UnderInvestigation)}
-                          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
-                        >
-                          Start investigation
-                        </button>
-                      )}
-                      {item.status === IncidentStatus.UnderInvestigation && (
-                        <div className="flex flex-col items-end gap-1">
-                          <input
-                            type="text"
-                            placeholder="Resolution notes (optional)"
-                            value={notesById[item.id] ?? ""}
-                            onChange={(e) =>
-                              setNotesById((prev) => ({ ...prev, [item.id]: e.target.value }))
-                            }
-                            className="w-56 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
-                          />
+                    {isSafetyOfficer && (
+                      <div className="flex flex-col items-end gap-2">
+                        {item.status === IncidentStatus.Reported && (
                           <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => advanceStatus(item.id, IncidentStatus.Closed)}
-                            className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                            onClick={() => advanceStatus(item.id, IncidentStatus.UnderInvestigation)}
+                            className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
                           >
-                            Close incident
+                            Start investigation
                           </button>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                        {item.status === IncidentStatus.UnderInvestigation && (
+                          <div className="flex flex-col items-end gap-1">
+                            <input
+                              type="text"
+                              placeholder="Resolution notes (optional)"
+                              value={notesById[item.id] ?? ""}
+                              onChange={(e) =>
+                                setNotesById((prev) => ({ ...prev, [item.id]: e.target.value }))
+                              }
+                              className="w-56 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
+                            />
+                            <button
+                              type="button"
+                              disabled={isUpdating}
+                              onClick={() => advanceStatus(item.id, IncidentStatus.Closed)}
+                              className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                            >
+                              Close incident
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <AttachmentsPanel entityType={AttachmentEntityType.IncidentReport} entityId={item.id} canUpload />
+                  <AcknowledgmentPanel entityType={AcknowledgmentEntityType.IncidentReport} entityId={item.id} />
                 </li>
               ))}
             </ul>

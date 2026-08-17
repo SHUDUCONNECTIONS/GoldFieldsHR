@@ -191,6 +191,12 @@ public class AttachmentService(ApplicationDbContext dbContext, IOptions<FileStor
                 var isAppointmentManager = requester.Role == EmployeeRole.SafetyOfficer;
                 return (isAppointmentManager, isAppointmentOwner || isAppointmentManager);
 
+            case AttachmentEntityType.WorkShiftSchedule:
+                var scheduleDocumentExists = await dbContext.PostedScheduleDocuments.AnyAsync(d => d.Id == entityId, cancellationToken);
+                if (!scheduleDocumentExists) return null;
+                // Posted schedules are visible org-wide; only HR (who posts them) can attach documents.
+                return (requester.Role == EmployeeRole.HR, true);
+
             case AttachmentEntityType.BoardTask:
                 var task = await dbContext.BoardTasks
                     .FirstOrDefaultAsync(t => t.Id == entityId, cancellationToken);

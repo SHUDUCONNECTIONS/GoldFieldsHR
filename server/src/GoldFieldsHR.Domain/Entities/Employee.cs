@@ -24,5 +24,8 @@ public class Employee
     public Guid? ManagerId { get; set; }
     public Employee? Manager { get; set; }
 
+    public byte[]? SignatureImageData { get; set; }
+    public DateTime? SignatureUpdatedAtUtc { get; set; }
+
     public string FullName => $"{FirstName} {LastName}".Trim();
 }

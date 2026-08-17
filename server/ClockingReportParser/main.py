@@ -1,0 +1,114 @@
+"""
+Clocking Report Parser - internal HTTP service
+================================================
+A thin FastAPI wrapper around clocking_report_parser.py, called by the
+GoldFieldsHR.Api backend (see Infrastructure/Timesheet/ClockingReportParserService.cs)
+rather than exposed to the internet directly - it has no auth of its own,
+so it must only be reachable from inside the deployment (localhost in dev,
+the docker-compose/Render internal network in production).
+
+Endpoints
+---------
+POST /api/parse   - upload one PDF, parse it, return a JSON summary plus the
+                     finished .xlsx inline as base64
+GET  /api/health  - liveness check
+
+USAGE
+-----
+    pip install -r requirements.txt
+    uvicorn main:app --port 8010
+"""
+
+import base64
+import sys
+import tempfile
+import uuid
+from pathlib import Path
+
+from fastapi import FastAPI, Form, HTTPException, UploadFile
+from pydantic import BaseModel
+
+# clocking_report_parser.py lives alongside this file - reuse it rather than
+# reimplementing the parsing/business logic here.
+PROJECT_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(PROJECT_ROOT))
+import clocking_report_parser as parser  # noqa: E402
+
+app = FastAPI(title="Clocking Report Parser")
+
+
+class ParseResult(BaseModel):
+    filename: str
+    status: str  # "ok" | "error"
+    message: str
+    events: int | None = None
+    days: int | None = None
+    shifts: int | None = None
+    total_hours: float | None = None
+    xlsx_base64: str | None = None
+    download_name: str | None = None
+
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post("/api/parse", response_model=ParseResult)
+async def parse_pdf(
+    file: UploadFile,
+    work_days: str = Form(default="mon,tue,wed,thu,fri"),
+    hours_per_day: float = Form(default=parser.DEFAULT_HOURS_PER_DAY),
+    rotating: bool = Form(default=False),
+):
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(400, "Only .pdf files are supported")
+    try:
+        parsed_work_days = parser.parse_work_days(work_days)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+    job_dir = Path(tempfile.mkdtemp(prefix=f"clocking_{uuid.uuid4().hex}_"))
+    in_path = job_dir / file.filename
+    with open(in_path, "wb") as f:
+        f.write(await file.read())
+
+    out_name = Path(file.filename).stem + "_parsed.xlsx"
+    out_path = job_dir / out_name
+
+    try:
+        meta, records = parser.parse_pdf(str(in_path))
+
+        df = parser.build_dataframe(records)
+        full_daily = parser.build_daily_summary(df, meta["Date From"], meta["Date To"])
+        shifts_df = parser.build_hours_worked(df)
+        timesheet_df = parser.build_timesheet(
+            df, meta, work_days=parsed_work_days, hours_per_day=hours_per_day, rotating=rotating
+        )
+
+        parser.build_workbook(
+            meta,
+            timesheet_df,
+            out_path,
+            work_days=parsed_work_days,
+            hours_per_day=hours_per_day,
+            rotating=rotating,
+        )
+
+        total_hours = float(shifts_df["Hours Worked"].sum())
+        xlsx_bytes = out_path.read_bytes()
+
+        return ParseResult(
+            filename=file.filename,
+            status="ok",
+            message=f"{meta.get('First Names', '')} {meta.get('SurName', '')}".strip()
+            or "Parsed successfully",
+            events=len(records),
+            days=int(full_daily.shape[0]),
+            shifts=len(shifts_df),
+            total_hours=round(total_hours, 2),
+            xlsx_base64=base64.b64encode(xlsx_bytes).decode("ascii"),
+            download_name=out_name,
+        )
+    except Exception as e:
+        return ParseResult(filename=file.filename, status="error", message=str(e))

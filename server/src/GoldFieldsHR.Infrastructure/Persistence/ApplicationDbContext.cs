@@ -15,6 +15,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<TimesheetEntry> TimesheetEntries => Set<TimesheetEntry>();
     public DbSet<TimesheetCorrectionRequest> TimesheetCorrectionRequests => Set<TimesheetCorrectionRequest>();
     public DbSet<ShiftChangeRequest> ShiftChangeRequests => Set<ShiftChangeRequest>();
+    public DbSet<PostedScheduleDocument> PostedScheduleDocuments => Set<PostedScheduleDocument>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<PreShiftSafetyCheck> PreShiftSafetyChecks => Set<PreShiftSafetyCheck>();
     public DbSet<IncidentReport> IncidentReports => Set<IncidentReport>();
@@ -28,6 +29,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<EmergencyAlert> EmergencyAlerts => Set<EmergencyAlert>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<Acknowledgment> Acknowledgments => Set<Acknowledgment>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Board> Boards => Set<Board>();
     public DbSet<BoardMember> BoardMembers => Set<BoardMember>();

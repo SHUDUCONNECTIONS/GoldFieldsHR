@@ -10,3 +10,11 @@ public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRe
         RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(8).MaximumLength(128);
     }
 }
+
+public class SetSignatureRequestValidator : AbstractValidator<SetSignatureRequest>
+{
+    public SetSignatureRequestValidator()
+    {
+        RuleFor(x => x.SignaturePngBase64).NotEmpty().MaximumLength(2_000_000);
+    }
+}

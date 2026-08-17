@@ -1,14 +1,17 @@
 import { useState } from "react";
+import { AcknowledgmentPanel } from "./AcknowledgmentPanel";
+import { AcknowledgmentEntityType } from "../types/acknowledgment";
 import { PpeItemTypeLabels, type PpeRequestDto } from "../types/ppe";
 
 interface PpeApprovalQueueProps {
   items: PpeRequestDto[];
   isBusy: boolean;
+  canManage: boolean;
   onApprove: (id: string) => void;
   onReject: (id: string, reason: string) => void;
 }
 
-export function PpeApprovalQueue({ items, isBusy, onApprove, onReject }: PpeApprovalQueueProps) {
+export function PpeApprovalQueue({ items, isBusy, canManage, onApprove, onReject }: PpeApprovalQueueProps) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
@@ -43,25 +46,29 @@ export function PpeApprovalQueue({ items, isBusy, onApprove, onReject }: PpeAppr
                   </p>
                   <p className="mt-1 text-xs text-slate-500">Reason: {item.reason}</p>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={isBusy}
-                    onClick={() => onApprove(item.id)}
-                    className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isBusy}
-                    onClick={() => startReject(item.id)}
-                    className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
-                  >
-                    Reject
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => onApprove(item.id)}
+                      className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => startReject(item.id)}
+                      className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
               </div>
+
+              <AcknowledgmentPanel entityType={AcknowledgmentEntityType.PpeRequest} entityId={item.id} />
 
               {rejectingId === item.id && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -70,7 +77,7 @@ export function PpeApprovalQueue({ items, isBusy, onApprove, onReject }: PpeAppr
                     placeholder="Reason for rejection (optional)"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="min-w-[240px] flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/15"
+                    className="min-w-[240px] flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/15"
                   />
                   <button
                     type="button"

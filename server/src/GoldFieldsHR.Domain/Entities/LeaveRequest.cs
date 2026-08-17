@@ -15,10 +15,16 @@ public class LeaveRequest
     public string Reason { get; set; } = string.Empty;
     public string ContactNumber { get; set; } = string.Empty;
 
-    public LeaveRequestStatus Status { get; set; } = LeaveRequestStatus.Pending;
+    public LeaveRequestStatus Status { get; set; } = LeaveRequestStatus.PendingLineManagerApproval;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public Guid? ReviewerId { get; set; }
-    public DateTime? ReviewedAtUtc { get; set; }
+    public Guid? LineManagerReviewerId { get; set; }
+    public DateTime? LineManagerReviewedAtUtc { get; set; }
+    public byte[]? LineManagerSignatureImageData { get; set; }
+
+    public Guid? HRReviewerId { get; set; }
+    public DateTime? HRReviewedAtUtc { get; set; }
+    public byte[]? HRSignatureImageData { get; set; }
+
     public string? RejectionReason { get; set; }
 }

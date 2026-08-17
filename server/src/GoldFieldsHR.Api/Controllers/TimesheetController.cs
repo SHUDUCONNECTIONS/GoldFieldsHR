@@ -8,8 +8,11 @@ namespace GoldFieldsHR.Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class TimesheetController(ITimesheetService timesheetService) : ControllerBase
+public class TimesheetController(ITimesheetService timesheetService, IClockingReportParserService clockingReportParserService) : ControllerBase
 {
+    private const long MaxClockingReportBytes = 20 * 1024 * 1024;
+
+
     [HttpPost("clock-in")]
     public async Task<IActionResult> ClockIn(CancellationToken cancellationToken)
     {
@@ -65,6 +68,27 @@ public class TimesheetController(ITimesheetService timesheetService) : Controlle
     public async Task<IActionResult> ReviewCorrection(Guid id, ReviewTimesheetCorrectionRequest review, CancellationToken cancellationToken)
     {
         var result = await timesheetService.ReviewCorrectionAsync(id, User.GetEmployeeId(), review, cancellationToken);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    [Authorize(Roles = "HR")]
+    [HttpPost("clocking-report-parser")]
+    [RequestSizeLimit(MaxClockingReportBytes)]
+    public async Task<IActionResult> ParseClockingReport(
+        IFormFile file,
+        [FromForm] string workDays,
+        [FromForm] double hoursPerDay,
+        [FromForm] bool rotating,
+        CancellationToken cancellationToken)
+    {
+        if (file.Length == 0)
+        {
+            return BadRequest(new { error = "The uploaded file is empty." });
+        }
+
+        await using var stream = file.OpenReadStream();
+        var result = await clockingReportParserService.ParseAsync(
+            stream, file.FileName, workDays, hoursPerDay, rotating, cancellationToken);
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 }
