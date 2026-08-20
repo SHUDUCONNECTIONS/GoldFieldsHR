@@ -247,6 +247,20 @@ public class EmployeeDirectoryService(ApplicationDbContext dbContext, UserManage
         return Result<EmployeeSummaryDto>.Success(ToDto(employee, email));
     }
 
+    public async Task<IReadOnlyList<EmployeeLiteDto>> GetActiveDirectoryLiteAsync(CancellationToken cancellationToken = default)
+    {
+        var employees = await dbContext.Employees
+            .Include(e => e.Site)
+            .Where(e => e.IsActive)
+            .OrderBy(e => e.FirstName)
+            .ThenBy(e => e.LastName)
+            .ToListAsync(cancellationToken);
+
+        return employees
+            .Select(e => new EmployeeLiteDto(e.Id, e.FullName, e.JobTitle, e.Site?.Name ?? string.Empty))
+            .ToList();
+    }
+
     private static EmployeeSummaryDto ToDto(Domain.Entities.Employee employee, string email) => new(
         employee.Id,
         employee.EmployeeNumber,

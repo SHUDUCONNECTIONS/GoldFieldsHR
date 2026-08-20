@@ -284,7 +284,7 @@ export function KpiAppraisalsPage() {
   }
 
   return (
-    <div className="stagger-children flex flex-col gap-6 rounded-2xl bg-[#202325] p-6 font-['Inter']">
+    <div className="stagger-children flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {isLoadingLists ? (

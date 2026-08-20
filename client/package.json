@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@microsoft/signalr": "^10.0.11",
     "axios": "^1.19.0",
     "lucide-react": "^1.31.0",
     "react": "^19.2.8",

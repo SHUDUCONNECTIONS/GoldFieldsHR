@@ -143,6 +143,7 @@ public static class DependencyInjection
         services.AddScoped<ISiteService, Sites.SiteService>();
         services.AddScoped<IBoardService, Boards.BoardService>();
         services.AddScoped<IBoardTaskService, Boards.BoardTaskService>();
+        services.AddScoped<IBoardPerformanceService, Boards.BoardPerformanceService>();
         services.AddScoped<IDocumentSigningService, Documents.DocumentSigningService>();
 
         services.AddHttpClient<IClockingReportParserService, Timesheet.ClockingReportParserService>((sp, client) =>

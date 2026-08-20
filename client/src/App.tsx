@@ -20,7 +20,11 @@ import { ReportsPage } from "./pages/ReportsPage";
 import { EmergencyPage } from "./pages/EmergencyPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CertificatesPage } from "./pages/CertificatesPage";
+import { KpiHubPage } from "./pages/KpiHubPage";
 import { KpiAppraisalsPage } from "./pages/KpiAppraisalsPage";
+import { BoardsPage } from "./pages/BoardsPage";
+import { BoardDetailPage } from "./pages/BoardDetailPage";
+import { PerformancePage } from "./pages/PerformancePage";
 import { ComingSoonPage } from "./pages/ComingSoonPage";
 import { NAV_ITEMS } from "./config/nav";
 
@@ -70,7 +74,12 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/training" element={<CertificatesPage />} />
           <Route path="/certificates" element={<CertificatesPage />} />
-          <Route path="/kpi" element={<KpiAppraisalsPage />} />
+          <Route path="/kpi" element={<KpiHubPage />}>
+            <Route index element={<KpiAppraisalsPage />} />
+            <Route path="boards" element={<BoardsPage />} />
+            <Route path="boards/:boardId" element={<BoardDetailPage />} />
+            <Route path="performance" element={<PerformancePage />} />
+          </Route>
           {NAV_ITEMS.filter((item) => !BUILT_PATHS.has(item.path)).map(({ path, label }) => (
             <Route key={path} path={path} element={<ComingSoonPage title={label} />} />
           ))}

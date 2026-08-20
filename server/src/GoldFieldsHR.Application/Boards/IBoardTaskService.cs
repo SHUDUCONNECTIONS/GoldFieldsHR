@@ -5,7 +5,7 @@ namespace GoldFieldsHR.Application.Boards;
 public interface IBoardTaskService
 {
     Task<Result<BoardTaskDto>> CreateAsync(
-        Guid boardId, Guid creatorEmployeeId, CreateBoardTaskRequest request, CancellationToken cancellationToken = default);
+        Guid boardId, Guid requesterId, CreateBoardTaskRequest request, CancellationToken cancellationToken = default);
 
     Task<Result<IReadOnlyList<BoardTaskDto>>> GetForBoardAsync(
         Guid boardId, Guid requesterId, Domain.Enums.BoardTaskStatus? status, Guid? assigneeId,
@@ -15,7 +15,7 @@ public interface IBoardTaskService
         Guid boardId, Guid taskId, Guid requesterId, CancellationToken cancellationToken = default);
 
     Task<Result<BoardTaskDto>> UpdateAsync(
-        Guid boardId, Guid taskId, Guid ownerEmployeeId, UpdateBoardTaskRequest request,
+        Guid boardId, Guid taskId, Guid requesterId, UpdateBoardTaskRequest request,
         CancellationToken cancellationToken = default);
 
     Task<Result<BoardTaskDto>> ChangeStatusAsync(

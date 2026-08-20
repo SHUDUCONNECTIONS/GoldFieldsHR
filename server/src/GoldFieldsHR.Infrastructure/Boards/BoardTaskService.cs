@@ -21,9 +21,10 @@ public class BoardTaskService(ApplicationDbContext dbContext, INotificationServi
             return Result<BoardTaskDto>.Failure("Board not found.");
         }
 
-        if (board.OwnerEmployeeId != creatorEmployeeId)
+        var canCreate = await CheckAccessAsync(boardId, creatorEmployeeId, cancellationToken);
+        if (canCreate != true)
         {
-            return Result<BoardTaskDto>.Failure("Only the board owner can create tasks.");
+            return Result<BoardTaskDto>.Failure("Only board members can create tasks.");
         }
 
         if (request.AssigneeEmployeeId.HasValue)
@@ -55,7 +56,7 @@ public class BoardTaskService(ApplicationDbContext dbContext, INotificationServi
             await notificationService.CreateAsync(
                 request.AssigneeEmployeeId.Value,
                 $"You were assigned a new task: \"{task.Title}\".",
-                $"/boards/{boardId}/tasks/{task.Id}",
+                $"/kpi/boards/{boardId}",
                 cancellationToken);
         }
 
@@ -121,7 +122,7 @@ public class BoardTaskService(ApplicationDbContext dbContext, INotificationServi
     }
 
     public async Task<Result<BoardTaskDto>> UpdateAsync(
-        Guid boardId, Guid taskId, Guid ownerEmployeeId, UpdateBoardTaskRequest request,
+        Guid boardId, Guid taskId, Guid requesterId, UpdateBoardTaskRequest request,
         CancellationToken cancellationToken = default)
     {
         var board = await dbContext.Boards.FirstOrDefaultAsync(b => b.Id == boardId, cancellationToken);
@@ -130,9 +131,10 @@ public class BoardTaskService(ApplicationDbContext dbContext, INotificationServi
             return Result<BoardTaskDto>.Failure("Board not found.");
         }
 
-        if (board.OwnerEmployeeId != ownerEmployeeId)
+        var canEdit = await CheckAccessAsync(boardId, requesterId, cancellationToken);
+        if (canEdit != true)
         {
-            return Result<BoardTaskDto>.Failure("Only the board owner can edit tasks.");
+            return Result<BoardTaskDto>.Failure("Only board members can edit tasks.");
         }
 
         var task = await dbContext.BoardTasks.FirstOrDefaultAsync(t => t.Id == taskId && t.BoardId == boardId, cancellationToken);
@@ -178,19 +180,10 @@ public class BoardTaskService(ApplicationDbContext dbContext, INotificationServi
 
         var isOwner = board.OwnerEmployeeId == requesterId;
         var isAssignee = task.AssigneeEmployeeId == requesterId;
-        if (!isOwner && !isAssignee)
+        var isMember = await CheckAccessAsync(boardId, requesterId, cancellationToken) == true;
+        if (!isMember)
         {
-            return Result<BoardTaskDto>.Failure("Only the board owner or the assignee can change this task's status.");
-        }
-
-        if (request.Status == BoardTaskStatus.Done)
-        {
-            var hasAttachment = await dbContext.Attachments.AnyAsync(
-                a => a.EntityType == AttachmentEntityType.BoardTask && a.EntityId == taskId, cancellationToken);
-            if (!hasAttachment)
-            {
-                return Result<BoardTaskDto>.Failure("Attach proof of work before marking this task done.");
-            }
+            return Result<BoardTaskDto>.Failure("Only board members can change this task's status.");
         }
 
         task.Status = request.Status;
@@ -202,7 +195,7 @@ public class BoardTaskService(ApplicationDbContext dbContext, INotificationServi
             await notificationService.CreateAsync(
                 board.OwnerEmployeeId,
                 $"\"{task.Title}\" was moved to {task.Status}.",
-                $"/boards/{boardId}/tasks/{taskId}",
+                $"/kpi/boards/{boardId}",
                 cancellationToken);
         }
         else if (isOwner && task.AssigneeEmployeeId.HasValue && task.AssigneeEmployeeId != requesterId)
@@ -210,7 +203,7 @@ public class BoardTaskService(ApplicationDbContext dbContext, INotificationServi
             await notificationService.CreateAsync(
                 task.AssigneeEmployeeId.Value,
                 $"\"{task.Title}\" was moved to {task.Status}.",
-                $"/boards/{boardId}/tasks/{taskId}",
+                $"/kpi/boards/{boardId}",
                 cancellationToken);
         }
 

@@ -58,7 +58,7 @@ public class BoardService(ApplicationDbContext dbContext, INotificationService n
         if (memberIds.Count > 0)
         {
             await notificationService.CreateForManyAsync(
-                memberIds, $"You were added to the board \"{board.Name}\".", $"/boards/{board.Id}", cancellationToken);
+                memberIds, $"You were added to the board \"{board.Name}\".", $"/kpi/boards/{board.Id}", cancellationToken);
         }
 
         return Result<BoardDto>.Success(await LoadDtoAsync(board.Id, cancellationToken));
@@ -152,7 +152,7 @@ public class BoardService(ApplicationDbContext dbContext, INotificationService n
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await notificationService.CreateAsync(
-            request.EmployeeId, $"You were added to the board \"{board.Name}\".", $"/boards/{board.Id}", cancellationToken);
+            request.EmployeeId, $"You were added to the board \"{board.Name}\".", $"/kpi/boards/{board.Id}", cancellationToken);
 
         return Result<BoardDto>.Success(await LoadDtoAsync(boardId, cancellationToken));
     }

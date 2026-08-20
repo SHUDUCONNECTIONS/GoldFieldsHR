@@ -7,9 +7,16 @@ import type {
   SetEmployeeManagerRequest,
   SetEmployeeRoleRequest,
 } from "../types/employee";
+import type { EmployeeLiteDto } from "../types/board";
 
 export async function getEmployees(query: EmployeeDirectoryQuery = {}): Promise<PagedResult<EmployeeSummaryDto>> {
   const { data } = await apiClient.get<PagedResult<EmployeeSummaryDto>>("/employees", { params: query });
+  return data;
+}
+
+/** Lightweight active-employee list any authenticated user can call, for member/assignee pickers. */
+export async function getEmployeeDirectoryLite(): Promise<EmployeeLiteDto[]> {
+  const { data } = await apiClient.get<EmployeeLiteDto[]>("/employees/directory-lite");
   return data;
 }
 

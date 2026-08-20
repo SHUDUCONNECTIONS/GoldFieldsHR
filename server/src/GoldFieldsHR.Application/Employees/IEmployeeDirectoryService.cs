@@ -20,4 +20,6 @@ public interface IEmployeeDirectoryService
 
     Task<IReadOnlyList<EmployeeSummaryDto>> GetDirectReportsAsync(
         Guid managerId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<EmployeeLiteDto>> GetActiveDirectoryLiteAsync(CancellationToken cancellationToken = default);
 }

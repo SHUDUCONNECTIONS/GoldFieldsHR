@@ -10,7 +10,6 @@ namespace GoldFieldsHR.Api.Controllers;
 [Route("api/[controller]")]
 public class BoardsController(IBoardService boardService) : ControllerBase
 {
-    [Authorize(Roles = "LineManager,HR,SafetyOfficer,Executive")]
     [HttpPost]
     public async Task<IActionResult> Create(CreateBoardRequest request, CancellationToken cancellationToken)
     {

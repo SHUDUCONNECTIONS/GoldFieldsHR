@@ -29,3 +29,5 @@ public record SetEmployeeActiveStatusRequest(bool IsActive);
 public record SetEmployeeManagerRequest(string? ManagerEmployeeNumber);
 
 public record SetEmployeeRoleRequest(EmployeeRole Role);
+
+public record EmployeeLiteDto(Guid Id, string FullName, string JobTitle, string SiteName);

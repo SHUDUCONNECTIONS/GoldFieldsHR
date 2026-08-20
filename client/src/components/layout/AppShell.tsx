@@ -15,8 +15,14 @@ export function AppShell() {
   const location = useLocation();
   const { session } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Nested routes (e.g. /kpi/boards, /kpi/boards/:id, /kpi/performance) have no direct
+  // NAV_ITEMS entry of their own — fall back to the longest matching parent path's label
+  // (excluding "/", which would otherwise prefix-match everything).
   const currentLabel =
-    NAV_ITEMS.find((item) => item.path === location.pathname)?.label ?? "Rams Mining Technologies";
+    NAV_ITEMS.find((item) => item.path === location.pathname)?.label ??
+    NAV_ITEMS.filter((item) => item.path !== "/" && location.pathname.startsWith(`${item.path}/`))
+      .sort((a, b) => b.path.length - a.path.length)[0]?.label ??
+    "Rams Mining Technologies";
 
   return (
     <div className="bg-cream flex h-screen">

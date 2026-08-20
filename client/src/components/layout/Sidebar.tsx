@@ -23,10 +23,10 @@ function NavItemLink({ path, label, icon: Icon, badge, onNavigate }: NavItem & {
         end={path === "/"}
         onClick={onNavigate}
         className={({ isActive }) =>
-          `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+          `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium shadow-sm transition-all ${
             isActive
-              ? "bg-yellow-500 text-white shadow-sm"
-              : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"
+              ? "bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 text-white shadow-md shadow-black/30 ring-1 ring-yellow-200/60"
+              : "bg-gradient-to-br from-[#caa43d] to-[#8a6a1a] text-slate-900 hover:from-[#e0bb52] hover:to-[#a17d22] hover:text-slate-950"
           }`
         }
       >
@@ -55,6 +55,14 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
     [session?.role],
   );
 
+  // Items with no category (e.g. Dashboard, Boards) render as permanent top-level
+  // links rather than being tucked inside a collapsible group — a one-item
+  // category would otherwise hide its only link behind an extra click.
+  const topLevelItems = useMemo(
+    () => NAV_ITEMS.filter((item) => !item.category && isVisibleToRole(item, session?.role)),
+    [session?.role],
+  );
+
   // Only one group open at a time (accordion), defaulting to whichever group
   // contains the current route. This keeps the sidebar's height bounded to
   // "header + item + 4 group labels + one group's items + footer" no matter
@@ -70,8 +78,6 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
     }
   }, [location.pathname, visibleGroups]);
 
-  const dashboardItem = NAV_ITEMS.find((item) => item.path === "/")!;
-
   function toggleGroup(label: string) {
     setOpenGroup((prev) => (prev === label ? null : label));
   }
@@ -82,22 +88,30 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      <div className="relative flex items-center gap-2 border-b border-slate-800 px-4 py-4">
-        <img src={ramsLogo} alt="Rams Mining Technologies" className="h-9 w-auto drop-shadow-[0_0_12px_rgba(234,179,8,0.35)]" />
-        <p className="text-xs leading-tight text-yellow-400">Engineering the Future of Mining.</p>
+      <div className="relative flex flex-col items-center gap-2 border-b border-slate-800 px-4 py-6">
         <button
           type="button"
           onClick={onNavigate}
           aria-label="Close menu"
-          className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-900 hover:text-slate-100 lg:hidden"
+          className="absolute right-3 top-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-900 hover:text-slate-100 lg:hidden"
         >
           <X className="h-5 w-5" />
         </button>
+        <img
+          src={ramsLogo}
+          alt="Rams Mining Technologies"
+          className="h-16 w-auto drop-shadow-[0_0_16px_rgba(234,179,8,0.45)]"
+        />
+        <p className="text-center text-[11px] font-medium uppercase tracking-wide text-yellow-400/80">
+          Engineering the Future of Mining.
+        </p>
       </div>
 
       <nav className="relative flex-1 overflow-hidden px-2 py-3">
         <ul className="flex flex-col gap-0.5">
-          <NavItemLink {...dashboardItem} onNavigate={onNavigate} />
+          {topLevelItems.map((item) => (
+            <NavItemLink key={item.path} {...item} onNavigate={onNavigate} />
+          ))}
         </ul>
 
         {visibleGroups.map((group) => {
