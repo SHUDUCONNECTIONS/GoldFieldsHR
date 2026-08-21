@@ -3,6 +3,7 @@ using GoldFieldsHR.Application.Common;
 using GoldFieldsHR.Application.Notifications;
 using GoldFieldsHR.Domain.Entities;
 using GoldFieldsHR.Domain.Enums;
+using GoldFieldsHR.Infrastructure.Common;
 using GoldFieldsHR.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
@@ -313,13 +314,8 @@ public class BoardTaskService(ApplicationDbContext dbContext, INotificationServi
                 page.Margin(30);
                 page.DefaultTextStyle(x => x.FontSize(11));
 
-                page.Header().Column(column =>
-                {
-                    column.Item().Text(board.Name).FontSize(18).Bold();
-                    column.Item().Text(
-                        $"Weekly Performance Summary: {weekStart:d MMM yyyy} - {weekEnd:d MMM yyyy}")
-                        .FontSize(12).FontColor(Colors.Grey.Darken1);
-                });
+                page.Header().Element(header => PdfBranding.RenderLetterhead(
+                    header, board.Name, $"Weekly Performance Summary: {weekStart:d MMM yyyy} - {weekEnd:d MMM yyyy}"));
 
                 page.Content().PaddingTop(20).Table(table =>
                 {

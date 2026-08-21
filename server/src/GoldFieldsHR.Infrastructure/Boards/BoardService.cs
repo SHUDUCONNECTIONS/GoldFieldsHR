@@ -44,6 +44,8 @@ public class BoardService(ApplicationDbContext dbContext, INotificationService n
             Description = request.Description,
             OwnerEmployeeId = ownerEmployeeId,
             SiteId = request.SiteId,
+            Priority = request.Priority,
+            Deadline = request.Deadline,
         };
 
         board.Members.Add(new BoardMember { Id = Guid.NewGuid(), BoardId = board.Id, EmployeeId = ownerEmployeeId });
@@ -116,6 +118,9 @@ public class BoardService(ApplicationDbContext dbContext, INotificationService n
         board.Name = request.Name;
         board.Description = request.Description;
         board.IsArchived = request.IsArchived;
+        board.Priority = request.Priority;
+        board.Status = request.Status;
+        board.Deadline = request.Deadline;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Result<BoardDto>.Success(await LoadDtoAsync(boardId, cancellationToken));
@@ -216,6 +221,7 @@ public class BoardService(ApplicationDbContext dbContext, INotificationService n
             .Include(b => b.OwnerEmployee)
             .Include(b => b.Site)
             .Include(b => b.Members).ThenInclude(m => m.Employee)
+            .Include(b => b.Tasks)
             .FirstAsync(b => b.Id == boardId, cancellationToken);
 
         return ToDto(board);
@@ -230,9 +236,24 @@ public class BoardService(ApplicationDbContext dbContext, INotificationService n
         board.SiteId,
         board.Site?.Name,
         board.IsArchived,
+        board.Priority,
+        board.Status,
+        board.Deadline,
+        ComputeCompletionPercentage(board),
         board.CreatedAtUtc,
         board.Members
             .OrderBy(m => m.Employee!.FirstName)
             .Select(m => new BoardMemberDto(m.EmployeeId, m.Employee!.FullName, m.Employee.JobTitle, m.AddedAtUtc))
             .ToList());
+
+    private static int ComputeCompletionPercentage(Board board)
+    {
+        if (board.Tasks.Count == 0)
+        {
+            return 0;
+        }
+
+        var done = board.Tasks.Count(t => t.Status == Domain.Enums.BoardTaskStatus.Done);
+        return (int)Math.Round(done * 100.0 / board.Tasks.Count);
+    }
 }

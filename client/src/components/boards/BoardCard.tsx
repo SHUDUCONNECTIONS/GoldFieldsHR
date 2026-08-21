@@ -1,9 +1,24 @@
 import { Link } from "react-router-dom";
-import { Users } from "lucide-react";
+import { CalendarDays, Users } from "lucide-react";
 import { PersonAvatar } from "./PersonAvatar";
-import type { BoardDto } from "../../types/board";
+import { formatDate } from "../../lib/format";
+import {
+  BoardPriority,
+  BoardPriorityColors,
+  BoardPriorityLabels,
+  BoardStatus,
+  BoardStatusLabels,
+  type BoardDto,
+} from "../../types/board";
 
 const MAX_VISIBLE_MEMBERS = 5;
+
+const STATUS_COLORS: Record<BoardStatus, string> = {
+  [BoardStatus.NotStarted]: "#8e9195",
+  [BoardStatus.InProgress]: "#f5a83c",
+  [BoardStatus.OnHold]: "#c65a5a",
+  [BoardStatus.Completed]: "#1ecb8f",
+};
 
 interface BoardCardProps {
   board: BoardDto;
@@ -12,6 +27,7 @@ interface BoardCardProps {
 export function BoardCard({ board }: BoardCardProps) {
   const visibleMembers = board.members.slice(0, MAX_VISIBLE_MEMBERS);
   const overflowCount = board.members.length - visibleMembers.length;
+  const statusColor = STATUS_COLORS[board.status];
 
   return (
     <Link
@@ -23,14 +39,46 @@ export function BoardCard({ board }: BoardCardProps) {
           <p className="truncate text-sm font-semibold text-white">{board.name}</p>
           <p className="truncate text-xs text-white/50">Owned by {board.ownerEmployeeName}</p>
         </div>
-        {board.isArchived && (
-          <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/60">
-            Archived
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {board.isArchived && (
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/60">
+              Archived
+            </span>
+          )}
+          <span
+            className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            style={{ backgroundColor: `${statusColor}26`, color: statusColor }}
+          >
+            {BoardStatusLabels[board.status]}
+          </span>
+        </div>
+      </div>
+
+      {board.description && <p className="line-clamp-2 text-xs text-white/60">{board.description}</p>}
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        {board.priority !== BoardPriority.Normal && (
+          <span
+            className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            style={{ backgroundColor: `${BoardPriorityColors[board.priority]}26`, color: BoardPriorityColors[board.priority] }}
+          >
+            {BoardPriorityLabels[board.priority]}
+          </span>
+        )}
+        {board.deadline && (
+          <span className="flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium text-white/50">
+            <CalendarDays className="h-2.5 w-2.5" />
+            {formatDate(board.deadline)}
           </span>
         )}
       </div>
 
-      {board.description && <p className="line-clamp-2 text-xs text-white/60">{board.description}</p>}
+      <div className="flex items-center gap-2">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-[#6fbe44] transition-all" style={{ width: `${board.completionPercentage}%` }} />
+        </div>
+        <span className="text-[10px] font-semibold text-white/50">{board.completionPercentage}%</span>
+      </div>
 
       <div className="mt-auto flex items-center gap-2 pt-1">
         <Users className="h-3.5 w-3.5 text-white/40" />

@@ -6,9 +6,17 @@ public record CreateBoardRequest(
     string Name,
     string? Description,
     Guid? SiteId,
+    BoardPriority Priority,
+    DateOnly? Deadline,
     List<Guid> InitialMemberEmployeeIds);
 
-public record UpdateBoardRequest(string Name, string? Description, bool IsArchived);
+public record UpdateBoardRequest(
+    string Name,
+    string? Description,
+    bool IsArchived,
+    BoardPriority Priority,
+    BoardStatus Status,
+    DateOnly? Deadline);
 
 public record AddBoardMemberRequest(Guid EmployeeId);
 
@@ -23,6 +31,10 @@ public record BoardDto(
     Guid? SiteId,
     string? SiteName,
     bool IsArchived,
+    BoardPriority Priority,
+    BoardStatus Status,
+    DateOnly? Deadline,
+    int CompletionPercentage,
     DateTime CreatedAtUtc,
     IReadOnlyList<BoardMemberDto> Members);
 

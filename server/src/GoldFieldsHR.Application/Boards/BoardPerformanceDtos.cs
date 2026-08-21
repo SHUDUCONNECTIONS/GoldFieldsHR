@@ -1,3 +1,5 @@
+using GoldFieldsHR.Domain.Enums;
+
 namespace GoldFieldsHR.Application.Boards;
 
 /// <summary>Query-only filter, not persisted anywhere — how far back "completed" counts and the chart look.</summary>
@@ -22,4 +24,26 @@ public record EmployeePerformanceDto(
     string SiteName,
     int TasksCompleted,
     int TasksInProgress,
-    int TasksOverdue);
+    int TasksOverdue,
+    int TasksDoneThisWeek,
+    int TotalTasks,
+    int BoardsCompleted,
+    int CompletionRatePercent);
+
+public record OrgPerformanceSummaryDto(
+    int TeamMembers,
+    int TasksDoneThisWeek,
+    int TasksInProgress,
+    int BoardsCompletedAllTime,
+    string? TopPerformerName,
+    int TopPerformerTasksDoneThisWeek);
+
+public record CompletedBoardDto(
+    Guid Id,
+    string Name,
+    string? Description,
+    string OwnerEmployeeName,
+    DateOnly? Deadline,
+    BoardPriority Priority,
+    DateTime CreatedAtUtc,
+    IReadOnlyList<string> MemberNames);

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, FileDown, Plus, UserPlus } from "lucide-react";
+import { ArrowLeft, FileDown, Plus, Settings2, UserPlus } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
-import { addBoardMember, getBoardById } from "../api/boards";
+import { addBoardMember, getBoardById, updateBoard } from "../api/boards";
 import { changeBoardTaskStatus, createBoardTask, deleteBoardTask, downloadWeeklySummaryPdf, getTasksForBoard, updateBoardTask } from "../api/boardTasks";
 import { extractErrorMessage } from "../api/client";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -11,7 +11,16 @@ import { PersonAvatar } from "../components/boards/PersonAvatar";
 import { TaskCard } from "../components/boards/TaskCard";
 import { TaskFormDialog, type TaskFormValues } from "../components/boards/TaskFormDialog";
 import { useBoardHub } from "../lib/useBoardHub";
-import { BoardTaskStatus, BoardTaskStatusLabels, type BoardDto, type BoardTaskDto } from "../types/board";
+import {
+  BoardPriority,
+  BoardPriorityLabels,
+  BoardStatus,
+  BoardStatusLabels,
+  BoardTaskStatus,
+  BoardTaskStatusLabels,
+  type BoardDto,
+  type BoardTaskDto,
+} from "../types/board";
 
 const COLUMNS: { status: BoardTaskStatus; color: string }[] = [
   { status: BoardTaskStatus.Todo, color: "#8e9195" },
@@ -38,6 +47,15 @@ export function BoardDetailPage() {
   const [newMemberIds, setNewMemberIds] = useState<string[]>([]);
   const [isAddingMembers, setIsAddingMembers] = useState(false);
   const [addMemberError, setAddMemberError] = useState<string | null>(null);
+
+  const [celebratingTaskId, setCelebratingTaskId] = useState<string | null>(null);
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsPriority, setSettingsPriority] = useState<BoardPriority>(BoardPriority.Normal);
+  const [settingsStatus, setSettingsStatus] = useState<BoardStatus>(BoardStatus.NotStarted);
+  const [settingsDeadline, setSettingsDeadline] = useState("");
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   const loadTasks = useCallback(async () => {
     if (!boardId) return;
@@ -73,7 +91,13 @@ export function BoardDetailPage() {
     if (task.status === targetStatus || !boardId) return;
 
     changeBoardTaskStatus(boardId, task.id, { status: targetStatus })
-      .then((updated) => setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t))))
+      .then((updated) => {
+        setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+        if (targetStatus === BoardTaskStatus.Done) {
+          setCelebratingTaskId(updated.id);
+          setTimeout(() => setCelebratingTaskId(null), 700);
+        }
+      })
       .catch((err) => setError(extractErrorMessage(err)));
   }
 
@@ -136,6 +160,37 @@ export function BoardDetailPage() {
     }
   }
 
+  function openSettings() {
+    if (!board) return;
+    setSettingsPriority(board.priority);
+    setSettingsStatus(board.status);
+    setSettingsDeadline(board.deadline ?? "");
+    setSettingsError(null);
+    setIsSettingsOpen(true);
+  }
+
+  async function handleSaveSettings() {
+    if (!boardId || !board) return;
+    setIsSavingSettings(true);
+    setSettingsError(null);
+    try {
+      const updated = await updateBoard(boardId, {
+        name: board.name,
+        description: board.description || undefined,
+        isArchived: board.isArchived,
+        priority: settingsPriority,
+        status: settingsStatus,
+        deadline: settingsDeadline || undefined,
+      });
+      setBoard(updated);
+      setIsSettingsOpen(false);
+    } catch (err) {
+      setSettingsError(extractErrorMessage(err));
+    } finally {
+      setIsSavingSettings(false);
+    }
+  }
+
   async function handleDownloadSummary() {
     if (!boardId || !board) return;
     try {
@@ -175,6 +230,24 @@ export function BoardDetailPage() {
         <div>
           <h2 className="text-lg font-semibold text-white">{board.name}</h2>
           {board.description && <p className="mt-1 max-w-xl text-sm text-white/50">{board.description}</p>}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/60">
+              {BoardStatusLabels[board.status]}
+            </span>
+            {board.priority !== BoardPriority.Normal && (
+              <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/60">
+                {BoardPriorityLabels[board.priority]}
+              </span>
+            )}
+            {board.deadline && (
+              <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/60">
+                Due {board.deadline}
+              </span>
+            )}
+            <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/60">
+              {board.completionPercentage}% complete
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex -space-x-2">
@@ -182,6 +255,16 @@ export function BoardDetailPage() {
               <PersonAvatar key={member.employeeId} name={member.employeeName} size={28} className="border-[#202325]" />
             ))}
           </div>
+          {isOwner && (
+            <button
+              type="button"
+              onClick={openSettings}
+              className="flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/5"
+            >
+              <Settings2 className="h-3.5 w-3.5" />
+              Board settings
+            </button>
+          )}
           {isOwner && (
             <button
               type="button"
@@ -253,6 +336,7 @@ export function BoardDetailPage() {
                       canChangeStatus={isMember}
                       canEdit={isMember}
                       canDelete={isOwner}
+                      isCelebrating={task.id === celebratingTaskId}
                       onMoveStatus={(status) => handleMoveStatus(task, status)}
                       onEdit={() => setTaskDialog({ task })}
                       onDelete={() => setTaskPendingDelete(task)}
@@ -288,6 +372,71 @@ export function BoardDetailPage() {
           onConfirm={handleConfirmDelete}
           onCancel={() => setTaskPendingDelete(null)}
         />
+      )}
+
+      {isSettingsOpen && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/60 px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#3a3d40] p-6 shadow-2xl font-['Inter']">
+            <h3 className="mb-4 text-sm font-semibold text-white">Board settings</h3>
+            <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1 text-sm text-white/70">
+                Status
+                <select
+                  value={settingsStatus}
+                  onChange={(e) => setSettingsStatus(Number(e.target.value) as BoardStatus)}
+                  className="rounded-lg border border-white/10 bg-[#202325] px-3 py-2 text-sm text-white focus:border-[#6fbe44] focus:outline-none"
+                >
+                  {Object.entries(BoardStatusLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-white/70">
+                Priority
+                <select
+                  value={settingsPriority}
+                  onChange={(e) => setSettingsPriority(Number(e.target.value) as BoardPriority)}
+                  className="rounded-lg border border-white/10 bg-[#202325] px-3 py-2 text-sm text-white focus:border-[#6fbe44] focus:outline-none"
+                >
+                  {Object.entries(BoardPriorityLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-white/70">
+                Deadline
+                <input
+                  type="date"
+                  value={settingsDeadline}
+                  onChange={(e) => setSettingsDeadline(e.target.value)}
+                  className="rounded-lg border border-white/10 bg-[#202325] px-3 py-2 text-sm text-white focus:border-[#6fbe44] focus:outline-none"
+                />
+              </label>
+            </div>
+            {settingsError && <p className="mt-2 text-sm text-[#e69c9c]">{settingsError}</p>}
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                type="button"
+                disabled={isSavingSettings}
+                onClick={handleSaveSettings}
+                className="rounded-lg bg-[#6fbe44] px-4 py-2 text-sm font-semibold text-[#131415] transition-colors hover:bg-[#93d75f] disabled:opacity-50"
+              >
+                {isSavingSettings ? "Saving..." : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(false)}
+                className="text-xs text-white/40 hover:text-white/70 hover:underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {isAddMemberOpen && (

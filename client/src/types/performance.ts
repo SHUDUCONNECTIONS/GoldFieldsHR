@@ -1,3 +1,5 @@
+import type { BoardPriority } from "./board";
+
 export const PerformanceRange = {
   Week: 0,
   Month: 1,
@@ -32,4 +34,28 @@ export interface EmployeePerformanceDto {
   tasksCompleted: number;
   tasksInProgress: number;
   tasksOverdue: number;
+  tasksDoneThisWeek: number;
+  totalTasks: number;
+  boardsCompleted: number;
+  completionRatePercent: number;
+}
+
+export interface OrgPerformanceSummaryDto {
+  teamMembers: number;
+  tasksDoneThisWeek: number;
+  tasksInProgress: number;
+  boardsCompletedAllTime: number;
+  topPerformerName: string | null;
+  topPerformerTasksDoneThisWeek: number;
+}
+
+export interface CompletedBoardDto {
+  id: string;
+  name: string;
+  description: string | null;
+  ownerEmployeeName: string;
+  deadline: string | null;
+  priority: BoardPriority;
+  createdAtUtc: string;
+  memberNames: string[];
 }

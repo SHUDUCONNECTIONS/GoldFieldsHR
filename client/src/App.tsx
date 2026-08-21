@@ -25,6 +25,7 @@ import { KpiAppraisalsPage } from "./pages/KpiAppraisalsPage";
 import { BoardsPage } from "./pages/BoardsPage";
 import { BoardDetailPage } from "./pages/BoardDetailPage";
 import { PerformancePage } from "./pages/PerformancePage";
+import { ColleaguesPage } from "./pages/ColleaguesPage";
 import { ComingSoonPage } from "./pages/ComingSoonPage";
 import { NAV_ITEMS } from "./config/nav";
 
@@ -79,6 +80,7 @@ function App() {
             <Route path="boards" element={<BoardsPage />} />
             <Route path="boards/:boardId" element={<BoardDetailPage />} />
             <Route path="performance" element={<PerformancePage />} />
+            <Route path="colleagues" element={<ColleaguesPage />} />
           </Route>
           {NAV_ITEMS.filter((item) => !BUILT_PATHS.has(item.path)).map(({ path, label }) => (
             <Route key={path} path={path} element={<ComingSoonPage title={label} />} />

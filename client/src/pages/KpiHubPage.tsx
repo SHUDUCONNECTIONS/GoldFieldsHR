@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
+import { EmployeeRole } from "../types/auth";
 
 const TABS = [
   { to: "/kpi", label: "Appraisals", end: true },
@@ -6,11 +8,17 @@ const TABS = [
   { to: "/kpi/performance", label: "Performance", end: true },
 ];
 
+const COLLEAGUES_TAB = { to: "/kpi/colleagues", label: "Colleagues", end: true };
+
 export function KpiHubPage() {
+  const { session } = useAuth();
+  const canManageColleagues = session?.role === EmployeeRole.HR || session?.role === EmployeeRole.Executive;
+  const tabs = canManageColleagues ? [...TABS, COLLEAGUES_TAB] : TABS;
+
   return (
     <div className="stagger-children flex flex-col gap-4 rounded-2xl bg-[#202325] p-6 font-['Inter']">
       <div className="flex w-fit gap-1.5 rounded-lg border border-white/10 bg-[#3a3d40] p-1">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}

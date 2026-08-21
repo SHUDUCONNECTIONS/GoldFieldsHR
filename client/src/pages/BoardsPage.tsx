@@ -7,7 +7,7 @@ import { BoardCard } from "../components/boards/BoardCard";
 import { BoardMemberPicker } from "../components/boards/BoardMemberPicker";
 import { KpiSkeletonCard } from "../components/KpiSkeletons";
 import { StepForm, type WizardStep } from "../components/StepForm";
-import type { BoardDto } from "../types/board";
+import { BoardPriority, BoardPriorityLabels, type BoardDto } from "../types/board";
 
 const inputClasses =
   "rounded-lg border border-white/10 bg-[#202325] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-[#6fbe44] focus:outline-none focus:ring-2 focus:ring-[#6fbe44]/20";
@@ -23,6 +23,8 @@ export function BoardsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<BoardPriority>(BoardPriority.Normal);
+  const [deadline, setDeadline] = useState("");
   const [memberIds, setMemberIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,6 +45,8 @@ export function BoardsPage() {
   function resetForm() {
     setName("");
     setDescription("");
+    setPriority(BoardPriority.Normal);
+    setDeadline("");
     setMemberIds([]);
   }
 
@@ -53,6 +57,8 @@ export function BoardsPage() {
       await createBoard({
         name,
         description: description || undefined,
+        priority,
+        deadline: deadline || undefined,
         initialMemberEmployeeIds: memberIds,
       });
       resetForm();
@@ -79,6 +85,26 @@ export function BoardsPage() {
             Description (optional)
             <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className={inputClasses} />
           </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className={labelClasses}>
+              Priority
+              <select
+                value={priority}
+                onChange={(e) => setPriority(Number(e.target.value) as BoardPriority)}
+                className={inputClasses}
+              >
+                {Object.entries(BoardPriorityLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClasses}>
+              Deadline (optional)
+              <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputClasses} />
+            </label>
+          </div>
         </div>
       ),
     },

@@ -1,3 +1,5 @@
+using GoldFieldsHR.Domain.Enums;
+
 namespace GoldFieldsHR.Domain.Entities;
 
 public class Board
@@ -14,6 +16,9 @@ public class Board
     public Site? Site { get; set; }
 
     public bool IsArchived { get; set; }
+    public BoardPriority Priority { get; set; } = BoardPriority.Normal;
+    public BoardStatus Status { get; set; } = BoardStatus.NotStarted;
+    public DateOnly? Deadline { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public ICollection<BoardMember> Members { get; set; } = new List<BoardMember>();

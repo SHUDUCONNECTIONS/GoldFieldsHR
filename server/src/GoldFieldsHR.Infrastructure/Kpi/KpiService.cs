@@ -2,6 +2,7 @@ using GoldFieldsHR.Application.Common;
 using GoldFieldsHR.Application.Kpi;
 using GoldFieldsHR.Domain.Entities;
 using GoldFieldsHR.Domain.Enums;
+using GoldFieldsHR.Infrastructure.Common;
 using GoldFieldsHR.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
@@ -682,8 +683,8 @@ public class KpiService(ApplicationDbContext dbContext) : IKpiService
 
                 page.Header().Column(column =>
                 {
-                    column.Item().Text("Key Performance Coordinator").FontSize(16).Bold();
-                    column.Item().Row(row =>
+                    column.Item().Element(header => PdfBranding.RenderLetterhead(header, "KPI Appraisal — Key Performance Coordinator"));
+                    column.Item().PaddingTop(4).Row(row =>
                     {
                         row.RelativeItem().Text($"Name: {appraisal.Employee!.FullName}").FontSize(10);
                         row.RelativeItem().Text($"Indu No: {appraisal.InductionNumber ?? "—"}").FontSize(10);

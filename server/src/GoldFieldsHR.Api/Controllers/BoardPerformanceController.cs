@@ -27,4 +27,33 @@ public class BoardPerformanceController(IBoardPerformanceService boardPerformanc
         var performance = await boardPerformanceService.GetOrgPerformanceAsync(siteId, range, cancellationToken);
         return Ok(performance);
     }
+
+    [Authorize(Roles = "HR,Executive")]
+    [HttpGet("org/summary")]
+    public async Task<IActionResult> GetOrgSummary([FromQuery] Guid? siteId, CancellationToken cancellationToken)
+    {
+        var summary = await boardPerformanceService.GetOrgSummaryAsync(siteId, cancellationToken);
+        return Ok(summary);
+    }
+
+    [Authorize(Roles = "HR,Executive")]
+    [HttpGet("completed-boards")]
+    public async Task<IActionResult> GetCompletedBoards([FromQuery] Guid? siteId, CancellationToken cancellationToken)
+    {
+        var boards = await boardPerformanceService.GetCompletedBoardsAsync(siteId, cancellationToken);
+        return Ok(boards);
+    }
+
+    [Authorize(Roles = "HR,Executive")]
+    [HttpGet("employee/{employeeId:guid}/pdf")]
+    public async Task<IActionResult> GetEmployeePdf(Guid employeeId, CancellationToken cancellationToken)
+    {
+        var result = await boardPerformanceService.GenerateEmployeePerformancePdfAsync(employeeId, cancellationToken);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return File(result.Value!, "application/pdf", $"employee-performance-{employeeId}.pdf");
+    }
 }

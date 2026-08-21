@@ -1,14 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, CalendarDays, CheckCircle2, Clock, LayoutGrid, Trophy, Users } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
-import { getMyPerformance, getOrgPerformance } from "../api/performance";
+import { getCompletedBoards, getMyPerformance, getOrgPerformance, getOrgPerformanceSummary } from "../api/performance";
 import { getAllSites } from "../api/sites";
 import { extractErrorMessage } from "../api/client";
 import { PersonAvatar } from "../components/boards/PersonAvatar";
 import { KpiSkeletonCard, KpiSkeletonStat } from "../components/KpiSkeletons";
 import { useCountUp } from "../lib/useCountUp";
+import { formatDate } from "../lib/format";
+import { BoardPriority, BoardPriorityColors, BoardPriorityLabels } from "../types/board";
 import { EmployeeRole } from "../types/auth";
-import { PerformanceRange, PerformanceRangeLabels, type EmployeePerformanceDto, type MyPerformanceDto } from "../types/performance";
+import {
+  PerformanceRange,
+  PerformanceRangeLabels,
+  type CompletedBoardDto,
+  type EmployeePerformanceDto,
+  type MyPerformanceDto,
+  type OrgPerformanceSummaryDto,
+} from "../types/performance";
 import type { SiteAdminDto } from "../types/site";
 
 const RANGE_OPTIONS = [PerformanceRange.Week, PerformanceRange.Month, PerformanceRange.All];
@@ -100,9 +109,89 @@ function OrgPerformanceRow({ row, maxCompleted }: { row: EmployeePerformanceDto;
           <span className="text-white/80">{row.tasksCompleted}</span>
         </div>
       </td>
+      <td className="px-4 py-3 text-[#93d75f]">{row.tasksDoneThisWeek}</td>
       <td className="px-4 py-3 text-[#f5a83c]">{row.tasksInProgress}</td>
       <td className="px-4 py-3 text-[#e69c9c]">{row.tasksOverdue}</td>
+      <td className="px-4 py-3 text-white/70">{row.boardsCompleted}</td>
+      <td className="px-4 py-3">
+        <span
+          className={`font-semibold ${
+            row.completionRatePercent >= 75 ? "text-[#1ecb8f]" : row.completionRatePercent >= 40 ? "text-[#f5a83c]" : "text-[#e69c9c]"
+          }`}
+        >
+          {row.completionRatePercent}%
+        </span>
+      </td>
     </tr>
+  );
+}
+
+interface SummaryTileProps {
+  label: string;
+  value: number | string | null;
+  sub?: string;
+  icon: typeof Clock;
+  color: string;
+}
+
+function SummaryTile({ label, value, sub, icon: Icon, color }: SummaryTileProps) {
+  const isNumeric = typeof value === "number";
+  const animated = useCountUp(isNumeric ? value : null);
+  return (
+    <div
+      className="flex min-w-[160px] flex-1 items-center gap-3 rounded-xl border-l-4 bg-[#3a3d40] px-4 py-3"
+      style={{ borderLeftColor: color }}
+    >
+      <Icon className="h-6 w-6 shrink-0" style={{ color }} />
+      <div className="min-w-0">
+        <p className="truncate text-[11px] text-white/40">{label}</p>
+        <p className="truncate text-lg font-bold text-white">{isNumeric ? (animated ?? "—") : value ?? "—"}</p>
+        {sub && <p className="truncate text-[11px] text-white/40">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function CompletedBoardCard({ board }: { board: CompletedBoardDto }) {
+  const priorityColor = BoardPriorityColors[board.priority];
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border-l-4 border-l-[#1ecb8f] bg-[#3a3d40] p-4">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold text-white">{board.name}</p>
+        <span className="shrink-0 rounded-full bg-[#1ecb8f]/15 px-2 py-0.5 text-[10px] font-semibold text-[#1ecb8f]">
+          Completed
+        </span>
+      </div>
+      {board.description && <p className="line-clamp-2 text-xs text-white/50">{board.description}</p>}
+      <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-white/40">
+        <span>
+          Owned by <strong className="text-white/70">{board.ownerEmployeeName}</strong>
+        </span>
+        {board.deadline && (
+          <span className="flex items-center gap-1">
+            <CalendarDays className="h-2.5 w-2.5" />
+            Deadline: {formatDate(board.deadline)}
+          </span>
+        )}
+        {board.priority !== BoardPriority.Normal && (
+          <span className="rounded-full px-1.5 py-0.5 font-semibold" style={{ backgroundColor: `${priorityColor}26`, color: priorityColor }}>
+            {BoardPriorityLabels[board.priority]}
+          </span>
+        )}
+      </div>
+      {board.memberNames.length > 0 && (
+        <div className="flex items-center gap-1.5 pt-1">
+          <div className="flex -space-x-2">
+            {board.memberNames.slice(0, 5).map((name) => (
+              <PersonAvatar key={name} name={name} size={22} className="border-[#3a3d40]" />
+            ))}
+          </div>
+          <span className="text-[10px] text-white/40">
+            {board.memberNames.length} member{board.memberNames.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -115,6 +204,8 @@ export function PerformancePage() {
   const [range, setRange] = useState<PerformanceRange>(PerformanceRange.Week);
   const [myPerformance, setMyPerformance] = useState<MyPerformanceDto | null>(null);
   const [orgPerformance, setOrgPerformance] = useState<EmployeePerformanceDto[]>([]);
+  const [orgSummary, setOrgSummary] = useState<OrgPerformanceSummaryDto | null>(null);
+  const [completedBoards, setCompletedBoards] = useState<CompletedBoardDto[]>([]);
   const [sites, setSites] = useState<SiteAdminDto[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -132,7 +223,14 @@ export function PerformancePage() {
 
   const loadOrg = useCallback(async (activeRange: PerformanceRange, siteId: string) => {
     try {
-      setOrgPerformance(await getOrgPerformance(activeRange, siteId || undefined));
+      const [performance, summary, boards] = await Promise.all([
+        getOrgPerformance(activeRange, siteId || undefined),
+        getOrgPerformanceSummary(siteId || undefined),
+        getCompletedBoards(siteId || undefined),
+      ]);
+      setOrgPerformance(performance);
+      setOrgSummary(summary);
+      setCompletedBoards(boards);
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
@@ -210,41 +308,96 @@ export function PerformancePage() {
         ))}
 
       {isOrgView && (
-        <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold text-white">
-            {isExecutive ? "Employee performance" : "All employees"}
-          </h3>
-          {isLoading ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <KpiSkeletonCard />
-              <KpiSkeletonCard />
-            </div>
-          ) : sortedOrgPerformance.length === 0 ? (
-            <p className="rounded-xl border border-white/10 bg-[#3a3d40] px-6 py-8 text-center text-sm text-white/40">
-              No employees found.
-            </p>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-white/10">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[560px] text-left text-xs">
-                  <thead>
-                    <tr className="bg-[#3f7429] text-white">
-                      <th className="px-4 py-3 font-semibold">Employee</th>
-                      <th className="px-4 py-3 font-semibold">Completed</th>
-                      <th className="px-4 py-3 font-semibold">In Progress</th>
-                      <th className="px-4 py-3 font-semibold">Overdue</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-[#3a3d40]">
-                    {sortedOrgPerformance.map((row) => (
-                      <OrgPerformanceRow key={row.employeeId} row={row} maxCompleted={maxCompleted} />
-                    ))}
-                  </tbody>
-                </table>
+        <>
+          <section className="flex flex-wrap gap-3">
+            {isLoading || !orgSummary ? (
+              <>
+                <KpiSkeletonStat />
+                <KpiSkeletonStat />
+                <KpiSkeletonStat />
+                <KpiSkeletonStat />
+                <KpiSkeletonStat />
+              </>
+            ) : (
+              <>
+                <SummaryTile label="Tasks Done This Week" value={orgSummary.tasksDoneThisWeek} icon={CheckCircle2} color="#1ecb8f" />
+                <SummaryTile label="In Progress Across Team" value={orgSummary.tasksInProgress} icon={Clock} color="#f5a83c" />
+                <SummaryTile label="Team Members" value={orgSummary.teamMembers} icon={Users} color="#f5a83c" />
+                <SummaryTile label="Boards Completed (All Time)" value={orgSummary.boardsCompletedAllTime} icon={LayoutGrid} color="#6fbe44" />
+                <SummaryTile
+                  label="Top Performer This Week"
+                  value={orgSummary.topPerformerName ?? "—"}
+                  sub={orgSummary.topPerformerName ? `${orgSummary.topPerformerTasksDoneThisWeek} tasks done` : undefined}
+                  icon={Trophy}
+                  color="#ffc107"
+                />
+              </>
+            )}
+          </section>
+
+          <section className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold text-white">
+              {isExecutive ? "Employee performance" : "All employees"}
+            </h3>
+            {isLoading ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <KpiSkeletonCard />
+                <KpiSkeletonCard />
               </div>
-            </div>
-          )}
-        </section>
+            ) : sortedOrgPerformance.length === 0 ? (
+              <p className="rounded-xl border border-white/10 bg-[#3a3d40] px-6 py-8 text-center text-sm text-white/40">
+                No employees found.
+              </p>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-white/10">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[760px] text-left text-xs">
+                    <thead>
+                      <tr className="bg-[#3f7429] text-white">
+                        <th className="px-4 py-3 font-semibold">Employee</th>
+                        <th className="px-4 py-3 font-semibold">Completed</th>
+                        <th className="px-4 py-3 font-semibold">Done This Week</th>
+                        <th className="px-4 py-3 font-semibold">In Progress</th>
+                        <th className="px-4 py-3 font-semibold">Overdue</th>
+                        <th className="px-4 py-3 font-semibold">Boards Completed</th>
+                        <th className="px-4 py-3 font-semibold">Completion Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-[#3a3d40]">
+                      {sortedOrgPerformance.map((row) => (
+                        <OrgPerformanceRow key={row.employeeId} row={row} maxCompleted={maxCompleted} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold text-white">
+              Completed boards history
+              <span className="ml-2 rounded-full bg-[#1ecb8f]/15 px-2 py-0.5 text-[11px] font-semibold text-[#1ecb8f]">
+                {completedBoards.length}
+              </span>
+            </h3>
+            {isLoading ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <KpiSkeletonCard />
+              </div>
+            ) : completedBoards.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-white/10 bg-[#3a3d40] px-6 py-8 text-center text-sm text-white/40">
+                No boards have been completed yet.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {completedBoards.map((board) => (
+                  <CompletedBoardCard key={board.id} board={board} />
+                ))}
+              </div>
+            )}
+          </section>
+        </>
       )}
     </div>
   );

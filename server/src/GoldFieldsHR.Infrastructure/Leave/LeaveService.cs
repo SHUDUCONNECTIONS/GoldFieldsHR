@@ -1,9 +1,9 @@
-using System.Reflection;
 using GoldFieldsHR.Application.Common;
 using GoldFieldsHR.Application.Leave;
 using GoldFieldsHR.Application.Notifications;
 using GoldFieldsHR.Domain.Entities;
 using GoldFieldsHR.Domain.Enums;
+using GoldFieldsHR.Infrastructure.Common;
 using GoldFieldsHR.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
@@ -248,7 +248,6 @@ public class LeaveService(ApplicationDbContext dbContext, INotificationService n
 
     private static byte[] BuildLeaveDocument(LeaveRequest entity, string? lineManagerName, string? hrName)
     {
-        var logo = LoadEmbeddedLogo();
         var days = entity.EndDate.DayNumber - entity.StartDate.DayNumber + 1;
 
         return Document.Create(container =>
@@ -259,18 +258,7 @@ public class LeaveService(ApplicationDbContext dbContext, INotificationService n
                 page.Margin(36);
                 page.DefaultTextStyle(x => x.FontSize(11));
 
-                page.Header().Row(row =>
-                {
-                    if (logo is not null)
-                    {
-                        row.ConstantItem(90).Image(logo);
-                    }
-                    row.RelativeItem().Column(column =>
-                    {
-                        column.Item().Text("Rams Mining Technologies").FontSize(16).Bold();
-                        column.Item().Text("Leave Application — Approved").FontSize(12).FontColor(Colors.Grey.Darken1);
-                    });
-                });
+                page.Header().Element(header => PdfBranding.RenderLetterhead(header, "Leave Application — Approved"));
 
                 page.Content().PaddingTop(20).Column(column =>
                 {
@@ -332,20 +320,6 @@ public class LeaveService(ApplicationDbContext dbContext, INotificationService n
         column.Item().LineHorizontal(0.75f).LineColor(Colors.Grey.Lighten1);
         column.Item().Text(reviewerName ?? "—").FontSize(10);
         column.Item().Text(reviewedAtUtc is null ? "—" : $"{reviewedAtUtc:d MMM yyyy HH:mm} UTC").FontSize(9).FontColor(Colors.Grey.Darken1);
-    }
-
-    private static byte[]? LoadEmbeddedLogo()
-    {
-        var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream("GoldFieldsHR.Infrastructure.Resources.rams-logo.png");
-        if (stream is null)
-        {
-            return null;
-        }
-
-        using var memory = new MemoryStream();
-        stream.CopyTo(memory);
-        return memory.ToArray();
     }
 
     private static LeaveRequestDto ToDto(LeaveRequest entity, string employeeName, bool isDirectReport = false) => new(

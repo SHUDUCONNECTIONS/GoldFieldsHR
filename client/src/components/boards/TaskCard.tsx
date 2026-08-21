@@ -16,12 +16,23 @@ interface TaskCardProps {
   canEdit: boolean;
   /** Owner only — matches DeleteAsync. */
   canDelete: boolean;
+  /** Briefly true right after this task is moved to Done, to play a completion pulse. */
+  isCelebrating?: boolean;
   onMoveStatus: (status: BoardTaskStatus) => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function TaskCard({ task, canChangeStatus, canEdit, canDelete, onMoveStatus, onEdit, onDelete }: TaskCardProps) {
+export function TaskCard({
+  task,
+  canChangeStatus,
+  canEdit,
+  canDelete,
+  isCelebrating,
+  onMoveStatus,
+  onEdit,
+  onDelete,
+}: TaskCardProps) {
   const overdue = isOverdue(task);
   const isDone = task.status === BoardTaskStatus.Done;
 
@@ -29,7 +40,7 @@ export function TaskCard({ task, canChangeStatus, canEdit, canDelete, onMoveStat
     <div
       className={`group flex items-start gap-2 rounded-lg border bg-[#2d2f31] p-3 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg ${
         isDone ? "border-[#1ecb8f]/30 border-l-2 border-l-[#1ecb8f]" : "border-white/5 hover:border-[#6fbe44]/30"
-      }`}
+      } ${isCelebrating ? "task-complete-pulse" : ""}`}
     >
       <div className="min-w-0 flex-1">
         <p className={`text-sm ${isDone ? "text-white/50 line-through" : "text-white/90"}`}>{task.title}</p>
