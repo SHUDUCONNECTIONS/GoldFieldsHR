@@ -12,7 +12,6 @@ public record RecentShiftRequestDto(
 
 public record DashboardSummaryDto(
     int PendingLeaveCount,
-    int IncidentsThisMonth,
     double? MedicalCompliancePercent,
     double? TrainingCompliancePercent,
     double? MyKpiOverallScorePercent,

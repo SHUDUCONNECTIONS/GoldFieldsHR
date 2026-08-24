@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CalendarOff, GraduationCap, HeartPulse, TrendingUp } from "lucide-react";
+import { CalendarOff, GraduationCap, HeartPulse, TrendingUp } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { getDashboardSummary } from "../api/dashboard";
 import { getMyNotifications } from "../api/notifications";
@@ -41,7 +41,6 @@ export function DashboardPage() {
 
   const loadingDetail = error ?? "Loading...";
 
-  const incidentsCount = useCountUp(summary ? summary.incidentsThisMonth : null);
   const medicalPercent = useCountUp(summary?.medicalCompliancePercent ?? null, 1);
   const trainingPercent = useCountUp(summary?.trainingCompliancePercent ?? null, 1);
   const pendingLeave = useCountUp(summary ? summary.pendingLeaveCount : null);
@@ -57,15 +56,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <StatCard
-          label="Incidents (MTD)"
-          value={incidentsCount !== null ? String(incidentsCount) : "—"}
-          detail={summary ? "Reported this month, org-wide" : loadingDetail}
-          icon={AlertTriangle}
-          iconTone={summary && summary.incidentsThisMonth > 0 ? "red" : "emerald"}
-          tone={summary && summary.incidentsThisMonth > 0 ? "warning" : "good"}
-        />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Medical Compliance"
           value={formatPercent(medicalPercent)}

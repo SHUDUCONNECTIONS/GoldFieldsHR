@@ -22,20 +22,6 @@ public class ReportsService(ApplicationDbContext dbContext) : IReportsService
             .OrderBy(r => r.Role)
             .ToList();
 
-        var openIncidents = await dbContext.IncidentReports
-            .CountAsync(i => i.Status != IncidentStatus.Closed, cancellationToken);
-        var closedIncidents = await dbContext.IncidentReports
-            .CountAsync(i => i.Status == IncidentStatus.Closed, cancellationToken);
-
-        var openIncidentsBySeverity = (await dbContext.IncidentReports
-            .Where(i => i.Status != IncidentStatus.Closed)
-            .GroupBy(i => i.Severity)
-            .Select(g => new { Severity = g.Key, Count = g.Count() })
-            .ToListAsync(cancellationToken))
-            .Select(s => new IncidentSeverityCountDto(s.Severity, s.Count))
-            .OrderBy(s => s.Severity)
-            .ToList();
-
         var pendingLeaveRequests = await dbContext.LeaveRequests
             .CountAsync(
                 r => r.Status == LeaveRequestStatus.PendingLineManagerApproval || r.Status == LeaveRequestStatus.PendingHRApproval,
@@ -57,9 +43,6 @@ public class ReportsService(ApplicationDbContext dbContext) : IReportsService
             totalEmployees,
             activeEmployees,
             headcountByRole,
-            openIncidents,
-            closedIncidents,
-            openIncidentsBySeverity,
             pendingLeaveRequests,
             validCertificates,
             dueSoonCertificates,

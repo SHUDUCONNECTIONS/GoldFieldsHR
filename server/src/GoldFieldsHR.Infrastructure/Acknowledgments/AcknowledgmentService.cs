@@ -85,8 +85,6 @@ public class AcknowledgmentService(ApplicationDbContext dbContext) : IAcknowledg
     private Task<bool> EntityExistsAsync(AcknowledgmentEntityType entityType, Guid entityId, CancellationToken cancellationToken) =>
         entityType switch
         {
-            AcknowledgmentEntityType.IncidentReport => dbContext.IncidentReports.AnyAsync(i => i.Id == entityId, cancellationToken),
-            AcknowledgmentEntityType.PreShiftSafetyCheck => dbContext.PreShiftSafetyChecks.AnyAsync(c => c.Id == entityId, cancellationToken),
             AcknowledgmentEntityType.PpeRequest => dbContext.PpeRequests.AnyAsync(p => p.Id == entityId, cancellationToken),
             AcknowledgmentEntityType.LegalAppointment => dbContext.LegalAppointments.AnyAsync(l => l.Id == entityId, cancellationToken),
             _ => Task.FromResult(false),

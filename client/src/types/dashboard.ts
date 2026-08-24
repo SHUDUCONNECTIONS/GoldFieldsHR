@@ -11,7 +11,6 @@ export interface RecentShiftRequest {
 
 export interface DashboardSummary {
   pendingLeaveCount: number;
-  incidentsThisMonth: number;
   medicalCompliancePercent: number | null;
   trainingCompliancePercent: number | null;
   myKpiOverallScorePercent: number | null;

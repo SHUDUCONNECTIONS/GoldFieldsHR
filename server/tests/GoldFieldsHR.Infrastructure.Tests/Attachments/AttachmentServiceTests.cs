@@ -85,32 +85,6 @@ public class AttachmentServiceTests
     }
 
     [Fact]
-    public async Task Upload_ToIncident_ReporterOrSafetyOfficerCanUpload_UnrelatedEmployeeCannot()
-    {
-        using var dbContext = TestDbContextFactory.Create();
-        var reporter = dbContext.AddEmployee(EmployeeRole.Employee);
-        var safetyOfficer = dbContext.AddEmployee(EmployeeRole.SafetyOfficer);
-        var unrelated = dbContext.AddEmployee(EmployeeRole.Employee);
-        var incident = new IncidentReport
-        {
-            Id = Guid.NewGuid(), EmployeeId = reporter.Id, Title = "Spill", Description = "...",
-            Severity = IncidentSeverity.Low, Location = "Shaft 1", OccurredAtUtc = DateTime.UtcNow,
-        };
-        dbContext.IncidentReports.Add(incident);
-        dbContext.SaveChanges();
-        var service = CreateService(dbContext);
-
-        var reporterUpload = await service.UploadAsync(AttachmentEntityType.IncidentReport, incident.Id, reporter.Id, ValidPdf());
-        Assert.True(reporterUpload.Succeeded);
-
-        var safetyUpload = await service.UploadAsync(AttachmentEntityType.IncidentReport, incident.Id, safetyOfficer.Id, ValidPdf());
-        Assert.True(safetyUpload.Succeeded);
-
-        var unrelatedUpload = await service.UploadAsync(AttachmentEntityType.IncidentReport, incident.Id, unrelated.Id, ValidPdf());
-        Assert.False(unrelatedUpload.Succeeded);
-    }
-
-    [Fact]
     public async Task Upload_DisallowedContentType_Fails()
     {
         using var dbContext = TestDbContextFactory.Create();

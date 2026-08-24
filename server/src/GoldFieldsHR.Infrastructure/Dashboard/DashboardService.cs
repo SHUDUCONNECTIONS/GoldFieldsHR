@@ -13,7 +13,6 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
             ?? throw new InvalidOperationException("Employee profile not found.");
 
         var pendingLeaveCount = await GetPendingLeaveCountAsync(employee.Id, employee.Role, cancellationToken);
-        var incidentsThisMonth = await GetIncidentsThisMonthAsync(cancellationToken);
         var medicalCompliancePercent = await GetMedicalCompliancePercentAsync(cancellationToken);
         var trainingCompliancePercent = await GetTrainingCompliancePercentAsync(cancellationToken);
         var myKpiOverallScorePercent = await GetMyKpiOverallScorePercentAsync(employeeId, cancellationToken);
@@ -21,7 +20,6 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
 
         return new DashboardSummaryDto(
             pendingLeaveCount,
-            incidentsThisMonth,
             medicalCompliancePercent,
             trainingCompliancePercent,
             myKpiOverallScorePercent,
@@ -36,15 +34,6 @@ public class DashboardService(ApplicationDbContext dbContext) : IDashboardServic
                 r => r.EmployeeId == employeeId
                     && (r.Status == LeaveRequestStatus.PendingLineManagerApproval || r.Status == LeaveRequestStatus.PendingHRApproval),
                 cancellationToken);
-    }
-
-    private async Task<int> GetIncidentsThisMonthAsync(CancellationToken cancellationToken)
-    {
-        var now = DateTime.UtcNow;
-        var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        return await dbContext.IncidentReports
-            .CountAsync(i => i.CreatedAtUtc >= startOfMonth, cancellationToken);
     }
 
     private async Task<double?> GetMedicalCompliancePercentAsync(CancellationToken cancellationToken)

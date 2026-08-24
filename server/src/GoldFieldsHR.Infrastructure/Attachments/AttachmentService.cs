@@ -166,14 +166,6 @@ public class AttachmentService(ApplicationDbContext dbContext, IOptions<FileStor
                 var isExamManager = requester.Role == EmployeeRole.Medical;
                 return (isExamManager, isExamOwner || isExamManager);
 
-            case AttachmentEntityType.IncidentReport:
-                var incident = await dbContext.IncidentReports
-                    .FirstOrDefaultAsync(i => i.Id == entityId, cancellationToken);
-                if (incident is null) return null;
-                var isIncidentOwner = incident.EmployeeId == requester.Id;
-                var isIncidentReviewer = requester.Role is EmployeeRole.SafetyOfficer or EmployeeRole.HR or EmployeeRole.Executive;
-                return (isIncidentOwner || isIncidentReviewer, isIncidentOwner || isIncidentReviewer);
-
             case AttachmentEntityType.LeaveRequest:
                 var leaveRequest = await dbContext.LeaveRequests
                     .FirstOrDefaultAsync(l => l.Id == entityId, cancellationToken);

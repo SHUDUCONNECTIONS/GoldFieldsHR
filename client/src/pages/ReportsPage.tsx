@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Award, CalendarOff, Download, HardHat, Scale, Users } from "lucide-react";
+import { Award, CalendarOff, Download, HardHat, Scale, Users } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { extractErrorMessage } from "../api/client";
 import { getReportsSummary } from "../api/reports";
@@ -7,7 +7,6 @@ import { StatCard } from "../components/StatCard";
 import { useToast } from "../components/ToastProvider";
 import { downloadCsv } from "../lib/csv";
 import { EmployeeRole, EmployeeRoleLabels } from "../types/auth";
-import { IncidentSeverityLabels } from "../types/incident";
 import type { ReportsSummaryDto } from "../types/reports";
 
 const ALLOWED_ROLES: EmployeeRole[] = [EmployeeRole.HR, EmployeeRole.SafetyOfficer, EmployeeRole.Executive];
@@ -50,8 +49,6 @@ export function ReportsPage() {
     downloadCsv(`reports-summary-${new Date().toISOString().slice(0, 10)}.csv`, ["Metric", "Value"], [
       ["Active employees", summary.activeEmployees],
       ["Total employees", summary.totalEmployees],
-      ["Open incidents", summary.openIncidents],
-      ["Closed incidents", summary.closedIncidents],
       ["Pending leave requests", summary.pendingLeaveRequests],
       ["Valid certificates", summary.validCertificates],
       ["Due soon certificates", summary.dueSoonCertificates],
@@ -61,7 +58,6 @@ export function ReportsPage() {
       ["Pending legal appointments", summary.pendingLegalAppointments],
       ["Active legal appointments", summary.activeLegalAppointments],
       ...summary.headcountByRole.map((r) => [`Headcount — ${EmployeeRoleLabels[r.role]}`, r.count]),
-      ...summary.openIncidentsBySeverity.map((s) => [`Open incidents — ${IncidentSeverityLabels[s.severity]}`, s.count]),
     ]);
     showSuccess("Reports summary exported to CSV.");
   }
@@ -86,14 +82,6 @@ export function ReportsPage() {
           detail={`${summary.totalEmployees} total on record`}
           icon={Users}
           iconTone="blue"
-        />
-        <StatCard
-          label="Open incidents"
-          value={String(summary.openIncidents)}
-          detail={`${summary.closedIncidents} closed`}
-          tone={summary.openIncidents > 0 ? "warning" : "good"}
-          icon={AlertTriangle}
-          iconTone={summary.openIncidents > 0 ? "red" : "emerald"}
         />
         <StatCard
           label="Pending leave requests"
@@ -127,42 +115,22 @@ export function ReportsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-6 py-4">
-            <h3 className="text-sm font-semibold text-slate-900">Headcount by role</h3>
-          </div>
-          {summary.headcountByRole.length === 0 ? (
-            <p className="px-6 py-8 text-center text-sm text-slate-500">No employees on record.</p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {summary.headcountByRole.map((item) => (
-                <li key={item.role} className="flex items-center justify-between px-6 py-3 text-sm">
-                  <span className="text-slate-700">{EmployeeRoleLabels[item.role]}</span>
-                  <span className="font-medium text-slate-900">{item.count}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-6 py-4">
+          <h3 className="text-sm font-semibold text-slate-900">Headcount by role</h3>
         </div>
-
-        <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-6 py-4">
-            <h3 className="text-sm font-semibold text-slate-900">Open incidents by severity</h3>
-          </div>
-          {summary.openIncidentsBySeverity.length === 0 ? (
-            <p className="px-6 py-8 text-center text-sm text-slate-500">No open incidents.</p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {summary.openIncidentsBySeverity.map((item) => (
-                <li key={item.severity} className="flex items-center justify-between px-6 py-3 text-sm">
-                  <span className="text-slate-700">{IncidentSeverityLabels[item.severity]}</span>
-                  <span className="font-medium text-slate-900">{item.count}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        {summary.headcountByRole.length === 0 ? (
+          <p className="px-6 py-8 text-center text-sm text-slate-500">No employees on record.</p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {summary.headcountByRole.map((item) => (
+              <li key={item.role} className="flex items-center justify-between px-6 py-3 text-sm">
+                <span className="text-slate-700">{EmployeeRoleLabels[item.role]}</span>
+                <span className="font-medium text-slate-900">{item.count}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

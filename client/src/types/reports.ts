@@ -1,13 +1,7 @@
 import type { EmployeeRole } from "./auth";
-import type { IncidentSeverity } from "./incident";
 
 export interface RoleHeadcountDto {
   role: EmployeeRole;
-  count: number;
-}
-
-export interface IncidentSeverityCountDto {
-  severity: IncidentSeverity;
   count: number;
 }
 
@@ -15,9 +9,6 @@ export interface ReportsSummaryDto {
   totalEmployees: number;
   activeEmployees: number;
   headcountByRole: RoleHeadcountDto[];
-  openIncidents: number;
-  closedIncidents: number;
-  openIncidentsBySeverity: IncidentSeverityCountDto[];
   pendingLeaveRequests: number;
   validCertificates: number;
   dueSoonCertificates: number;

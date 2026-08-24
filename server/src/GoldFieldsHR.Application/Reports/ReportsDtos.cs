@@ -4,15 +4,10 @@ namespace GoldFieldsHR.Application.Reports;
 
 public record RoleHeadcountDto(EmployeeRole Role, int Count);
 
-public record IncidentSeverityCountDto(IncidentSeverity Severity, int Count);
-
 public record ReportsSummaryDto(
     int TotalEmployees,
     int ActiveEmployees,
     IReadOnlyList<RoleHeadcountDto> HeadcountByRole,
-    int OpenIncidents,
-    int ClosedIncidents,
-    IReadOnlyList<IncidentSeverityCountDto> OpenIncidentsBySeverity,
     int PendingLeaveRequests,
     int ValidCertificates,
     int DueSoonCertificates,

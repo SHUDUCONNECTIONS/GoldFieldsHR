@@ -17,8 +17,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ShiftChangeRequest> ShiftChangeRequests => Set<ShiftChangeRequest>();
     public DbSet<PostedScheduleDocument> PostedScheduleDocuments => Set<PostedScheduleDocument>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
-    public DbSet<PreShiftSafetyCheck> PreShiftSafetyChecks => Set<PreShiftSafetyCheck>();
-    public DbSet<IncidentReport> IncidentReports => Set<IncidentReport>();
     public DbSet<Policy> Policies => Set<Policy>();
     public DbSet<PolicyAcknowledgment> PolicyAcknowledgments => Set<PolicyAcknowledgment>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
@@ -26,7 +24,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<MedicalExamination> MedicalExaminations => Set<MedicalExamination>();
     public DbSet<PpeRequest> PpeRequests => Set<PpeRequest>();
     public DbSet<LegalAppointment> LegalAppointments => Set<LegalAppointment>();
-    public DbSet<EmergencyAlert> EmergencyAlerts => Set<EmergencyAlert>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Acknowledgment> Acknowledgments => Set<Acknowledgment>();
